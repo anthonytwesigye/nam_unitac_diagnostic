@@ -72,9 +72,6 @@ outlier_cols_not_4_checking <- df_tool_data %>%
   select(matches("geopoint|gps|_index|_submit|submission|_sample_|^_id$")) %>% 
   colnames()
 
-# logical checks data
-df_list_logical_checks <- read_csv("inputs/logical_checks_aba_mbarara_overview.csv")%>% 
-  filter(!is.na(check_id))
 
 # combine cleaningtools checks
 list_log <- df_tool_data_with_audit_time %>%
@@ -112,14 +109,14 @@ list_log <- df_tool_data_with_audit_time %>%
 
 # other checks ------------------------------------------------------------
 
-df_other_checks <- cts_other_specify(input_tool_data = df_tool_data, 
+df_other_checks <- scto_other_specify(input_tool_data = df_tool_data, 
                                              input_uuid_col = "_uuid", 
                                              input_survey = df_survey, 
                                              input_choices = df_choices)
 list_log$other_log <- df_other_checks
 
 # other checks roster
-df_other_checks_roster <- cts_other_specify_repeats(input_repeat_data = df_loop_r_roster, 
+df_other_checks_roster <- ctso_other_specify_repeats(input_repeat_data = df_loop_r_roster, 
                                                             input_uuid_col = "_submission__uuid", 
                                                             input_survey = df_survey, 
                                                             input_choices = df_choices,
@@ -154,45 +151,11 @@ df_potential_loop_outliers_roster_r <- df_loop_outliers_roster_r$potential_outli
          i.check.so_sm_choices = "",
          i.check.sheet = "hh_roster",
          i.check.index = index) %>% 
-  batch_select_rename()
-list_log$outliers_roster_log_r <- df_potential_loop_outliers_roster_r
+  batch_select_rename()%>% 
+  filter(!question %in% c("_index", "_parent_index"))
+list_log$outliers_roster_log_r <- df_potential_loop_outliers_roster_r 
 
 
-# income
-df_loop_outliers_income_r <- cleaningtools::check_outliers(dataset = df_loop_r_income  %>%  mutate(loop_uuid = paste0(`_submission__uuid`, " * ", `_index`)), 
-                                                           uuid_column = "loop_uuid", strongness_factor = 3,
-                                                           sm_separator = "/") 
-
-
-# silhouette --------------------------------------------------------------
-
-# NOTE: the column for "col_admin" is kept in the data
-
-omit_cols_sil <- c("start", "end", "today", "duration", "duration_minutes",
-                   "deviceid", "audit", "audit_URL", "instance_name", "end_survey",
-                   "geopoint", "_geopoint_latitude", "_geopoint_longitude","_geopoint_altitude", 
-                   "_geopoint_precision", "_id" ,"_submission_time","_validation_status","_notes",
-                   "_status","_submitted_by","_tags","_index", "__version__" )
-
-data_similartiy_sil <- df_tool_data %>% 
-  select(- any_of(omit_cols_sil), - matches("_note$|^note_"))
-
-df_sil_data <- calculateEnumeratorSimilarity(data = data_similartiy_sil,
-                                             input_df_survey = df_survey, 
-                                             col_enum = "enumerator_id",
-                                             col_admin = "interview_cell") %>% 
-  mutate(si2= abs(si))
-
-df_sil_processed <- df_sil_data[order(df_sil_data$`si2`, decreasing = TRUE),!colnames(df_sil_data)%in%"si2"] %>%  
-  # filter(si > 0.6) %>%
-  mutate(i.check.uuid = "all",
-         i.check.question = NA_character_,
-         i.check.issue = "silhouette flag",
-         i.check.description = glue::glue("Potential similar responses for enumerator:{enumerator_id}, interview_cell:{interview_cell}. si: {si}")) %>% 
-  batch_select_rename()
-
-# add other checks to the list
-list_log$enum_similarity <- df_sil_processed
 
 # combine the checks ------------------------------------------------------
 
@@ -221,7 +184,8 @@ df_combined_log <- create_combined_log_keep_change_type(dataset_name = "checked_
 
 # create workbook ---------------------------------------------------------
 # prep data
-cols_to_add_to_log <- c("enumerator_id", "point_number", "today", "interview_cell")
+cols_to_add_to_log <- c("enumerator_id", "today", "municipality", "town_council", "village_council", "settlement")
+
 
 tool_support <- df_combined_log$checked_dataset %>% 
   select(uuid = `_uuid`, any_of(cols_to_add_to_log))
@@ -233,13 +197,7 @@ df_prep_cleaning_log <- df_combined_log$cleaning_log %>%
   add_qn_label_to_cl(input_cl_name_col = "question",
                      input_tool = df_survey, 
                      input_tool_name_col = "name", 
-                     input_tool_label_col = "label") %>% 
-  mutate(enumerator_id = ifelse(issue %in% c("silhouette flag"), 
-                                str_replace(string = str_extract(string = description, pattern = "enumerator:[0-9]{1,3}"), pattern = "enumerator:", ""),
-                                enumerator_id),
-         interview_cell = ifelse(issue %in% c("silhouette flag"), 
-                                 str_replace(string = str_extract(string = description, pattern = "interview_cell:\\w+"), pattern = "interview_cell:", ""),
-                                 interview_cell))
+                     input_tool_label_col = "label")
 
 df_prep_readme <- tibble::tribble(
   ~change_type_validation,                       ~description,
@@ -288,5 +246,5 @@ freezePane(wb = wb_log, "readme", firstActiveRow = 2, firstActiveCol = 2)
 
 # openXL(wb_log)
 
-saveWorkbook(wb_log, paste0("outputs/", butteR::date_file_prefix(),"_combined_checks_aba_mbarara.xlsx"), overwrite = TRUE)
-openXL(file = paste0("outputs/", butteR::date_file_prefix(),"_combined_checks_aba_mbarara.xlsx"))
+saveWorkbook(wb_log, paste0("outputs/", butteR::date_file_prefix(),"_combined_checks_nam_diagnostic.xlsx"), overwrite = TRUE)
+openXL(file = paste0("outputs/", butteR::date_file_prefix(),"_combined_checks_nam_diagnostic.xlsx"))
