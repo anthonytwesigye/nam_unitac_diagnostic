@@ -25,6 +25,10 @@ df_for_colnames <- df_samples %>%
   select(site_id) %>% 
   unique()
 
+df_for_colnames_poi <- df_samples_poi %>% 
+  select(location) %>% 
+  unique()
+
 df_samples_required <- df_samples %>% 
   select(site_id, sample_size)
 
@@ -73,14 +77,15 @@ cl_log_change_response <- df_cl_log %>%
   select(uuid, question, new_value)
 
 # updated tool data ref
-df_updated_tool_data <- df_tool_data
+df_updated_tool_data <- df_tool_data %>% mutate(uuid = `_uuid`)
 
 # get uuids from cleaning log
 uuids_chg_response <- cl_log_change_response %>% pull(uuid) %>% unique()
 
 for (current_uuid in uuids_chg_response) {
   current_uuid_data <- cl_log_change_response %>%
-    filter(uuid == current_uuid) 
+    filter(uuid == current_uuid) %>% 
+    pivot_wider(names_from = "question", values_from = "new_value", uuid)
   print(current_uuid_data)
   # process current updates
   df_current_updated <- df_updated_tool_data %>%
@@ -114,7 +119,7 @@ df_cl_deletion_surveys <- df_cl_log %>%
 df_cl_deletion_poi <- df_cl_log %>% 
   filter(location_type %in% c("poi")) %>% 
   filter(change_type %in% "remove_survey", reviewed == 1) %>%
-  distinct(site_id, uuid, enumerator_id)
+  distinct(location, uuid, enumerator_id)
 
 
 # functions for changing some options in the table
@@ -208,4 +213,24 @@ df_cl_deletion_surveys %>%
   group_by(site_id, enumerator_id) %>%
   summarise(number_of_surveys_for_deletion_by_enumerator = n()) %>%
   dt_options_fewcols()
+```
+
+## Summary on the points of interest per location
+
+```{r, echo = FALSE}
+df_poi_per_location <- df_samples_poi %>% 
+  select(location, samples = sample_size)
+
+df_pois_data %>% 
+  filter(!uuid %in% df_cl_deletion_poi$uuid) %>% 
+  group_by(location) %>% 
+  summarise(pois_completed = n()) %>% 
+  arrange(location) %>% 
+  right_join(df_poi_per_location, by = "location") %>% 
+  mutate(pois_completed = ifelse(is.na(pois_completed), 0, pois_completed),
+         remaining_pois = samples - pois_completed
+  ) %>% 
+  left_join(df_for_colnames_poi, by = "location") %>% 
+  dt_options_fewcols()
+
 ```
