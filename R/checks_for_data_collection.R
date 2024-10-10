@@ -118,7 +118,7 @@ df_testing_data <- df_tool_data %>%
   mutate(i.check.uuid =  `_uuid`,
          i.check.change_type = "remove_survey",
          i.check.question = "",     
-         i.check.old_value =  "", 
+         i.check.old_value =  as.character(today), 
          i.check.new_value = "",     
          i.check.issue = "testing_data",       
          i.check.other_text = "",
@@ -127,6 +127,54 @@ df_testing_data <- df_tool_data %>%
          i.check.so_sm_choices = "") %>% 
   batch_select_rename()
 list_log$testing_data <- df_testing_data
+
+# no consent
+df_no_consent <- df_tool_data %>% 
+  filter(consent == 2) %>% 
+  mutate(i.check.uuid =  `_uuid`,
+         i.check.change_type = "remove_survey",
+         i.check.question = "",     
+         i.check.old_value =  as.character(consent), 
+         i.check.new_value = "",     
+         i.check.issue = "no_consent",       
+         i.check.other_text = "",
+         i.check.comment = "",
+         i.check.reviewed = "",
+         i.check.so_sm_choices = "") %>% 
+  batch_select_rename()
+list_log$no_consent <- df_no_consent
+
+# incomplete_surveys
+df_incomplete_surveys <- df_tool_data %>% 
+  filter(!interview_status %in% c(1)) %>% 
+  mutate(i.check.uuid =  `_uuid`,
+         i.check.change_type = "remove_survey",
+         i.check.question = "",     
+         i.check.old_value =  as.character(interview_status), 
+         i.check.new_value = "",     
+         i.check.issue = "incomplete_surveys",       
+         i.check.other_text = "",
+         i.check.comment = "",
+         i.check.reviewed = "",
+         i.check.so_sm_choices = "") %>% 
+  batch_select_rename()
+list_log$incomplete_surveys <- df_incomplete_surveys
+
+# poor_gps_accuracy
+df_poor_gps_accuracy <- df_tool_data %>% 
+  filter(`_geopoint_precision` > 20) %>% 
+  mutate(i.check.uuid =  `_uuid`,
+         i.check.change_type = "remove_survey",
+         i.check.question = "",     
+         i.check.old_value =  as.character(`_geopoint_precision`), 
+         i.check.new_value = "",     
+         i.check.issue = "poor_gps_accuracy",       
+         i.check.other_text = "",
+         i.check.comment = "",
+         i.check.reviewed = "",
+         i.check.so_sm_choices = "") %>% 
+  batch_select_rename()
+list_log$poor_gps_accuracy <- df_poor_gps_accuracy
 
 
 # other checks ------------------------------------------------------------
