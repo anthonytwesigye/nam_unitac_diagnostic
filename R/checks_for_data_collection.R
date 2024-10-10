@@ -400,7 +400,9 @@ freezePane(wb = wb_log, "readme", firstActiveRow = 2, firstActiveCol = 2)
 activeSheet(wb = wb_log) <- "cleaning_log"
 
 
-openXL(wb_log)
+# openXL(wb_log)
 
 saveWorkbook(wb_log, paste0("outputs/", butteR::date_file_prefix(),"_combined_checks_nam_diagnostic.xlsx"), overwrite = TRUE)
 openXL(file = paste0("outputs/", butteR::date_file_prefix(),"_combined_checks_nam_diagnostic.xlsx"))
+
+saveWorkbook(wb_log, paste0("inputs/combined_checks_nam_diagnostic.xlsx"), overwrite = TRUE)
