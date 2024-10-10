@@ -18,42 +18,41 @@ library(tidyverse)
 library(glue)
 library(htmlwidgets)
 
-df_samples <- readr::read_csv("../inputs/diagnostic_survey_samples_definition.csv") %>% 
-  mutate(district = janitor::make_clean_names(district))
+df_samples <- readr::read_csv("../inputs/diagnostic_survey_samples_definition.csv")
 
 df_for_colnames <- df_samples %>% 
-  select(district) %>% 
+  select(location) %>% 
   unique()
 
 df_samples_required <- df_samples %>% 
-  select(district, sample_size)
+  select(site_id, sample_size)
 
 # tool
 loc_tool <- "../inputs/Diagnostic_of_informality_Tool.xlsx"
 df_survey <- readxl::read_excel(loc_tool, sheet = "survey")
 df_choices <- readxl::read_excel(loc_tool, sheet = "choices")
 
-dist_label_support <- df_choices %>%
-  filter(list_name %in% c("district")) %>% 
-  select(list_name, value, label = `label:English`)
-
 # data
 df_tool_data <- readxl::read_excel("../inputs/Diagnostic_of_informality_Data.xlsx") %>%
-  mutate(uuid = str_replace(string = KEY, pattern = "uuid:", replacement = ""),
-         start_date = as_date(starttime),
-         start = as_datetime(starttime),
-         end = as_datetime(endtime)) %>% 
-  filter(start_date >= as_date("2024-10-07")) 
+  mutate(uuid = `_uuid`,
+         start = as_datetime(start),
+         end = as_datetime(end),
+         start_date = as_date(start)) #%>% 
+  # filter(start_date >= as_date("2024-10-07")) 
 
 # days that contain data
 df_days_for_data_collection <- df_tool_data %>% select(start_date) %>% unique() %>% arrange(start_date) %>% pull()
 
 df_data_support_cl_log <- df_tool_data %>% 
-  select(uuid, district)
+  mutate(location = case_when(interview_loc_level %in% c("municipality") ~ municipality,
+                              interview_loc_level %in% c("town_council") ~ town_council,
+                              interview_loc_level %in% c("village_council") ~ village_council,
+                              interview_loc_level %in% c("settlement") ~ settlement)) %>% 
+  select(uuid, location)
 
 
 # cleaning log handling
-df_cl_log <- readxl::read_excel("../inputs/data_checks_msme_april.xlsx", sheet = "cleaning_log") %>% 
+df_cl_log <- readxl::read_excel("../inputs/combined_checks_nam_diagnostic.xlsx", sheet = "cleaning_log") %>% 
   left_join(df_data_support_cl_log, by = "uuid")
 
 # change_response logs that affect stats in the data collection progress ref
@@ -85,17 +84,24 @@ for (current_uuid in uuids_chg_response) {
     df_updated_tool_data <- df_current_updated
 }
 
+# seperate site and poi data
+
+df_sites_data <- df_updated_tool_data %>% 
+  filter(location_type %in% c("interview_site"))
+
+df_pois_data <- df_updated_tool_data %>% 
+  filter(location_type %in% c("poi"))
 
 # enumerator performance data
-df_enum_performance <- df_updated_tool_data %>% 
+df_enum_performance <- df_sites_data %>% 
   mutate(int.survey_time_interval = lubridate::time_length(end - start, unit = "min"),
          int.survey_time_interval = ceiling(int.survey_time_interval))
 
 # surveys for deletion
 df_cl_deletion <- df_cl_log %>% 
   filter(change_type %in% "remove_survey", reviewed == 1) %>%
-  mutate(district = district.y) %>% 
-  distinct(district, uuid)
+  mutate(location = location.y) %>% 
+  distinct(location, uuid)
 
 # functions for changing some options in the table
 dt_set_options<- function(x){
@@ -135,29 +141,29 @@ Last date of data collection: **`r df_days_for_data_collection[length(df_days_fo
 ### Summary on the surveys per location
 
 ```{r, echo = FALSE}
-df_samp_per_district <- df_samples_required %>% 
-  select(district, samples = sample_size)
+df_samp_per_location <- df_samples_required %>% 
+  select(location, samples = sample_size)
 
 df_cl_surveys_for_deletion <- df_cl_log %>% 
   filter(change_type == "remove_survey", reviewed == 1) %>% 
-  rename(district = district.y) %>% 
-  group_by(district) %>% 
+  rename(location = location.y) %>% 
+  group_by(location) %>% 
   distinct(uuid) %>%
   summarise(surveys_for_deletion = n())
 
 
 df_updated_tool_data %>% 
-  group_by(district) %>% 
+  group_by(location) %>% 
   summarise(surveys_completed = n()) %>% 
-  arrange(district) %>% 
-  right_join(df_samp_per_district, by = "district") %>% 
-  left_join(df_cl_surveys_for_deletion, by = "district") %>% 
+  arrange(location) %>% 
+  right_join(df_samp_per_location, by = "location") %>% 
+  left_join(df_cl_surveys_for_deletion, by = "location") %>% 
   mutate(surveys_completed = ifelse(is.na(surveys_completed), 0, surveys_completed),
          surveys_for_deletion = ifelse(is.na(surveys_for_deletion), 0, surveys_for_deletion),
          int.surveys_and_deletion = surveys_completed - surveys_for_deletion,
          remaining_surveys = samples - int.surveys_and_deletion
   ) %>% 
-  left_join(df_for_colnames, by = "district") %>% 
+  left_join(df_for_colnames, by = "location") %>% 
   select(-c(int.surveys_and_deletion)) %>% 
   dt_options_fewcols()
 
@@ -168,7 +174,7 @@ df_updated_tool_data %>%
 ```{r, echo = FALSE}
 
 df_enum_performance %>%
-  group_by(district, start_date, enum) %>%
+  group_by(location, start_date, enum) %>%
   summarise(number_of_interviews_done = n(), `average_survey_time(minutes)` =    round(mean(int.survey_time_interval, na.rm = TRUE), 0)) %>%
   dt_options_fewcols()
 ```
@@ -178,8 +184,8 @@ df_enum_performance %>%
 
 ```{r, echo = FALSE}
 df_cl_log %>%
-  rename(district = district.y) %>%
-  group_by(district, enum) %>%
+  rename(location = location.y) %>%
+  group_by(location, enum) %>%
   summarise(number_of_issues_by_enum = n()) %>%
   dt_options_fewcols()
 ```
@@ -190,9 +196,9 @@ df_cl_log %>%
 ```{r, echo = FALSE}
 df_cl_log %>%
   filter(change_type == "remove_survey", reviewed == 1) %>%
-  rename(district = district.y) %>%
-  distinct(district, uuid, enum) %>%
-  group_by(district, enum) %>%
+  rename(location = location.y) %>%
+  distinct(location, uuid, enum) %>%
+  group_by(location, enum) %>%
   summarise(number_of_surveys_for_deletion_by_enumerator = n()) %>%
   dt_options_fewcols()
 ```
