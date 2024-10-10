@@ -77,7 +77,7 @@ list_log <- df_tool_data_with_audit_time %>%
   check_duration(column_to_check = "duration_audit_sum_all_minutes",
                  uuid_column = "_uuid",
                  log_name = "duration_log",
-                 lower_bound = 15,
+                 lower_bound = 10,
                  higher_bound = 120) %>%
   # check_outliers(uuid_column = "_uuid", sm_separator = "/",
   #                strongness_factor = 3, columns_not_to_check = outlier_cols_not_4_checking) %>% 
