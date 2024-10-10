@@ -146,7 +146,7 @@ list_log$no_consent <- df_no_consent
 
 # incomplete_surveys
 df_incomplete_surveys <- df_tool_data %>% 
-  filter(!interview_status %in% c(1)) %>% 
+  filter(!interview_status %in% c("1")) %>% 
   mutate(i.check.uuid =  `_uuid`,
          i.check.change_type = "remove_survey",
          i.check.question = "",     
@@ -175,6 +175,38 @@ df_poor_gps_accuracy <- df_tool_data %>%
          i.check.so_sm_choices = "") %>% 
   batch_select_rename()
 list_log$poor_gps_accuracy <- df_poor_gps_accuracy
+
+# re routing: do_you_receive
+df_receive_regular_salary <- df_tool_data %>% 
+  filter(do_you_receive %in% c("1")) %>% 
+  mutate(i.check.uuid =  `_uuid`,
+         i.check.change_type = "remove_survey",
+         i.check.question = "",     
+         i.check.old_value =  as.character(do_you_receive), 
+         i.check.new_value = "",     
+         i.check.issue = "receive_regular_salary",       
+         i.check.other_text = "",
+         i.check.comment = "",
+         i.check.reviewed = "",
+         i.check.so_sm_choices = "") %>% 
+  batch_select_rename()
+list_log$receive_regular_salary <- df_receive_regular_salary
+
+# re routing: responsibility_for_business
+df_responsibility_for_business <- df_tool_data %>% 
+  filter(responsibility_for_business %in% c("1")) %>% 
+  mutate(i.check.uuid =  `_uuid`,
+         i.check.change_type = "remove_survey",
+         i.check.question = "",     
+         i.check.old_value =  as.character(responsibility_for_business), 
+         i.check.new_value = "",     
+         i.check.issue = "responsibility_for_business",       
+         i.check.other_text = "",
+         i.check.comment = "",
+         i.check.reviewed = "",
+         i.check.so_sm_choices = "") %>% 
+  batch_select_rename()
+list_log$responsibility_for_business <- df_responsibility_for_business
 
 
 # other checks ------------------------------------------------------------
