@@ -115,18 +115,43 @@ df_check_soft_duplicates <-  check_soft_duplicates(dataset = df_tool_data_with_a
                                                    return_all_results = FALSE)
 
 # missing location
+# opuwo, town_council
+missing_opuwo <- c("9dcf420a-19ab-48fb-b704-895da0861c31",
+  "bcfcec7b-23bf-4710-95b3-2be53b7b1613",
+  "3ab2d613-46a4-4df5-96a1-9a1dcb894661",
+  "48e05e94-df31-4e2e-a36d-d741111b8a88") 
+
+# okangwati, settlement
+missing_okangwati <- c("bd256c98-0794-493b-8c72-dba0a59e0342",
+  "80b5ccfe-7cd5-4c23-95a5-49f73d7a7c37",
+  "a1757d14-ba10-464a-a1b0-8189059c1bff",
+  "16afa6f1-a01e-440f-880f-0b76e2c73eb4")
+
 df_missing_loc_level <- df_tool_data %>% 
-  filter(is.na(interview_loc_level)) %>% 
+  filter(is.na(interview_loc_level), !consent %in% c("2")) %>% 
   mutate(i.check.uuid =  `_uuid`,
          i.check.change_type = "change_response",
-         i.check.question = "municipality-town_council-village_council-settlement",     
+         i.check.question = "",     
          i.check.old_value =  "", 
          i.check.new_value = "",     
          i.check.issue = "missing_location",       
          i.check.other_text = "",
          i.check.comment = "",
-         i.check.reviewed = "",
+         i.check.reviewed = "1",
          i.check.so_sm_choices = "") %>% 
+  slice(rep(1:n(), each = 2)) %>%  
+  group_by(i.check.uuid, i.check.change_type,  i.check.question,  i.check.old_value) %>%  
+  mutate(rank = row_number(),
+         i.check.question = case_when(rank == 1 ~ "interview_loc_level", 
+                                      rank == 2 & i.check.uuid %in% c(missing_opuwo) ~ "town_council",
+                                      rank == 2 & i.check.uuid %in% c(missing_okangwati) ~ "settlement",
+         ),
+         i.check.new_value = case_when(rank == 1 & i.check.uuid %in% c(missing_opuwo) ~ "town_council",
+                                       rank == 1 & i.check.uuid %in% c(missing_okangwati) ~ "settlement",
+                                       rank == 2 & i.check.uuid %in% c(missing_opuwo) ~ "opuwo",
+                                       rank == 2 & i.check.uuid %in% c(missing_okangwati) ~ "okangwati",
+         )
+  ) %>% 
   batch_select_rename()
 list_log$missing_loc <- df_missing_loc_level
 
@@ -141,7 +166,7 @@ df_testing_data <- df_tool_data %>%
          i.check.issue = "testing_data",       
          i.check.other_text = "",
          i.check.comment = "",
-         i.check.reviewed = "",
+         i.check.reviewed = "1",
          i.check.so_sm_choices = "") %>% 
   batch_select_rename()
 list_log$testing_data <- df_testing_data
@@ -157,7 +182,7 @@ df_no_consent <- df_tool_data %>%
          i.check.issue = "no_consent",       
          i.check.other_text = "",
          i.check.comment = "",
-         i.check.reviewed = "",
+         i.check.reviewed = "1",
          i.check.so_sm_choices = "") %>% 
   batch_select_rename()
 list_log$no_consent <- df_no_consent
@@ -173,7 +198,7 @@ df_incomplete_surveys <- df_tool_data %>%
          i.check.issue = "incomplete_surveys",       
          i.check.other_text = "",
          i.check.comment = "",
-         i.check.reviewed = "",
+         i.check.reviewed = "1",
          i.check.so_sm_choices = "") %>% 
   batch_select_rename()
 list_log$incomplete_surveys <- df_incomplete_surveys
