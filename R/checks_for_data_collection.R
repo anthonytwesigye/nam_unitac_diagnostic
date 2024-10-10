@@ -75,7 +75,6 @@ outlier_cols_not_4_checking <- df_tool_data %>%
 
 # combine cleaningtools checks
 list_log <- df_tool_data_with_audit_time %>%
-  check_pii(uuid_column = "_uuid") %>%
   check_duration(column_to_check = "duration_audit_sum_all_minutes",
                  uuid_column = "_uuid",
                  log_name = "duration_log",
