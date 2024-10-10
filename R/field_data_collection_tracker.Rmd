@@ -17,6 +17,7 @@ knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
 library(tidyverse)
 library(glue)
 library(htmlwidgets)
+library(leaflet)
 
 df_samples <- readr::read_csv("../inputs/diagnostic_survey_samples_definition.csv")
 df_samples_poi <- readr::read_csv("../inputs/diagnostic_survey_poi.csv")
@@ -51,14 +52,16 @@ df_tool_data <- readxl::read_excel("../inputs/Diagnostic_of_informality_Data.xls
                                         poi_category %in% c("2")|interview_site_category %in% c("2") ~ "informal",
                                         poi_category %in% c("3")|interview_site_category %in% c("3") ~ "household",
          ),
-         site_id = paste0(location, "_", int.site_formality)) #%>% 
+         site_id = paste0(location, "_", int.site_formality),
+         latitude = as.numeric(`_geopoint_latitude`),
+         longitude = as.numeric(`_geopoint_longitude`)) #%>% 
 # filter(start_date >= as_date("2024-10-07")) 
 
 # days that contain data
 df_days_for_data_collection <- df_tool_data %>% select(start_date) %>% unique() %>% arrange(start_date) %>% pull()
 
 df_data_support_cl_log <- df_tool_data %>% 
-  select(uuid, location_type, site_id)
+  select(uuid, location_type, site_id, latitude, longitude)
 
 
 # cleaning log handling
@@ -205,6 +208,17 @@ df_cl_log %>%
   dt_options_fewcols()
 ```
 
+### Number of issues by enumerator per issue type
+
+```{r, echo = FALSE}
+df_cl_log %>%
+  filter(location_type %in% c("interview_site")) %>% 
+  group_by(site_id, enumerator_id, issue) %>%
+  summarise(number_of_issues_by_issue_id = n()) %>%
+  dt_options_fewcols()
+
+```
+
 
 ### Enumerators with surveys for deletion
 
@@ -234,3 +248,40 @@ df_pois_data %>%
   dt_options_fewcols()
 
 ```
+
+## Map for deletions
+
+
+```{r, echo = FALSE, out.width="100%"}
+# popup
+labels_pts <- ~sprintf(
+  "<strong>Location Type: %s</strong><br/>
+      Location :  <strong>%s</strong><br/>
+      Issue :  <strong>%s</strong><br/>
+      Enumerator ID :  <strong>%s</strong>",
+  location_type, location, issue, enumerator_id
+) %>%
+  lapply(htmltools::HTML)
+
+df_cl_log %>%
+  filter(change_type == "remove_survey", reviewed == 1) %>%
+  group_by(uuid, location_type, location, latitude, longitude) %>%
+  summarise(enumerator_id = paste(enumerator_id, collapse = " : "),
+            location_type = paste(location_type, collapse = " : "),
+            location = paste(location, collapse = " : "),
+            change_type = paste(change_type, collapse = " : "),
+            # issue_id = paste(issue_id, collapse = " : "),
+            issue = paste(issue, collapse = " : ")
+  ) %>%
+  unique() %>%
+  leaflet() %>%
+  addTiles() %>%
+  addCircleMarkers(~longitude,
+                   ~latitude,
+                   popup = labels_pts,
+                   radius = 10,
+                   color = "red",
+                   stroke = FALSE, fillOpacity = 0.9,
+                   label = labels_pts,
+                   clusterOptions = markerClusterOptions())
+``````
