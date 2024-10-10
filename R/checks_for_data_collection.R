@@ -5,7 +5,6 @@ library(sf)
 library(glue)
 library(supporteR)
 library(openxlsx)
-library(cluster)
 
 source("R/support_functions.R")
 source("support_files/credentials.R")
@@ -78,15 +77,35 @@ list_log <- df_tool_data_with_audit_time %>%
   check_duration(column_to_check = "duration_audit_sum_all_minutes",
                  uuid_column = "_uuid",
                  log_name = "duration_log",
-                 lower_bound = 20,
+                 lower_bound = 15,
                  higher_bound = 120) %>%
-  check_outliers(uuid_column = "_uuid", sm_separator = "/",
-                 strongness_factor = 3, columns_not_to_check = outlier_cols_not_4_checking) %>% 
+  # check_outliers(uuid_column = "_uuid", sm_separator = "/",
+  #                strongness_factor = 3, columns_not_to_check = outlier_cols_not_4_checking) %>% 
   check_value(uuid_column = "_uuid", values_to_look = c(99, 999, 9999))
 
 
 # other logical checks ----------------------------------------------------
 
+# outliers
+numeric_cols_main_data = c("count_hh_number", "next_resp_age", "how_long_operating_enterprise", 
+                 "num_people_with_similar_job", "gross_salary", "days_worked_in_week", 
+                 "hours_worked_per_day", "num_employed_paid_family", "avg_salary_employed_paid_family", 
+                 "num_employed_unpaid_family", "num_employed_paid_non_family", 
+                 "avg_salary_employed_paid_non_family", "estimated_monthly_sales", 
+                 "estimated_monthly_profit", "enterprise_age", "monthly_value_of_sales_of_enterprise", 
+                 "monthly_value_of_profit_of_enterprise", "number_of_work_days", 
+                 "number_of_work_hours_per_day", "monthly_value_of_sales_of_business", 
+                 "monthly_value_of_profit_of_business", "number_of_work_days_a_week_contributing_worker", 
+                 "work_hours_per_day_contributing_worker")
+
+df_check_outliers <- check_outliers(dataset = df_tool_data_with_audit_time, 
+                                    uuid_column = "_uuid", sm_separator = "/",
+                                    strongness_factor = 3, columns_not_to_check = outlier_cols_not_4_checking)
+
+list_log$outliers_main_data <- df_check_outliers$potential_outliers %>% 
+  filter(question %in% numeric_cols_main_data)
+
+# soft duplicates
 df_check_soft_duplicates <-  check_soft_duplicates(dataset = df_tool_data_with_audit_time, kobo_survey = df_survey,
                                                    uuid_column = "_uuid",
                                                    idnk_value = "dk",
@@ -253,7 +272,7 @@ df_potential_loop_outliers_roster_r <- df_loop_outliers_roster_r$potential_outli
          i.check.sheet = "hh_roster",
          i.check.index = index) %>% 
   batch_select_rename()%>% 
-  filter(!question %in% c("_index", "_parent_index"))
+  filter(question %in% c("age"))
 list_log$outliers_roster_log_r <- df_potential_loop_outliers_roster_r 
 
 
@@ -265,16 +284,24 @@ df_combined_log <- create_combined_log_keep_change_type(dataset_name = "checked_
 
 # create workbook ---------------------------------------------------------
 # prep data
-cols_to_add_to_log <- c("enumerator_id", "today", "municipality", "town_council", "village_council", "settlement")
+cols_to_add_to_log <- c("enumerator_id", "today", "region", "interview_loc_level", "municipality", "town_council", "village_council", "settlement")
+cols_to_drop <- c("municipality", "town_council", "village_council", "settlement")
+cols_to_maintain <- c("enumerator_id", "today", "region", "interview_loc_level", "location")
+
 
 
 tool_support <- df_combined_log$checked_dataset %>% 
-  select(uuid = `_uuid`, any_of(cols_to_add_to_log))
+  select(uuid = `_uuid`, any_of(cols_to_add_to_log)) %>% 
+  mutate(location = case_when(interview_loc_level %in% c("municipality") ~ municipality,
+                              interview_loc_level %in% c("town_council") ~ town_council,
+                              interview_loc_level %in% c("village_council") ~ village_council,
+                              interview_loc_level %in% c("settlement") ~ settlement)) %>% 
+  select(-any_of(cols_to_drop))
 
 df_prep_checked_data <- df_combined_log$checked_dataset
 df_prep_cleaning_log <- df_combined_log$cleaning_log %>%
   left_join(tool_support, by = "uuid") %>% 
-  relocate(any_of(cols_to_add_to_log), .after = uuid) %>% 
+  relocate(any_of(cols_to_maintain), .after = uuid) %>% 
   add_qn_label_to_cl(input_cl_name_col = "question",
                      input_tool = df_survey, 
                      input_tool_name_col = "name", 
@@ -282,7 +309,7 @@ df_prep_cleaning_log <- df_combined_log$cleaning_log %>%
 
 df_prep_soft_duplicates_log <- df_check_soft_duplicates$soft_duplicate_log %>%
   left_join(tool_support, by = "uuid") %>%
-  relocate(any_of(cols_to_add_to_log), .after = uuid)
+  relocate(any_of(cols_to_maintain), .after = uuid)
 
 df_prep_readme <- tibble::tribble(
   ~change_type_validation,                       ~description,
@@ -342,7 +369,12 @@ writeDataTable(wb = wb_log, sheet = "readme",
 # freeze pane
 freezePane(wb = wb_log, "readme", firstActiveRow = 2, firstActiveCol = 2)
 
-# openXL(wb_log)
+# active sheet
+
+activeSheet(wb = wb_log) <- "cleaning_log"
+
+
+openXL(wb_log)
 
 saveWorkbook(wb_log, paste0("outputs/", butteR::date_file_prefix(),"_combined_checks_nam_diagnostic.xlsx"), overwrite = TRUE)
 openXL(file = paste0("outputs/", butteR::date_file_prefix(),"_combined_checks_nam_diagnostic.xlsx"))
