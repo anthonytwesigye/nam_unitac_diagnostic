@@ -193,7 +193,7 @@ list_log$no_consent <- df_no_consent
 
 # incomplete_surveys
 df_incomplete_surveys <- df_tool_data %>% 
-  filter(!interview_status %in% c("1")) %>% 
+  filter(location_type %in% c("interview_site"), !interview_status %in% c("1"), consent %in% c("1")) %>% 
   mutate(i.check.uuid =  `_uuid`,
          i.check.change_type = "remove_survey",
          i.check.question = "",     
@@ -327,7 +327,13 @@ tool_support <- df_combined_log$checked_dataset %>%
                               interview_loc_level %in% c("settlement") ~ settlement)) %>% 
   select(-any_of(cols_to_drop))
 
-df_prep_checked_data <- df_combined_log$checked_dataset
+df_prep_checked_data <- df_combined_log$checked_dataset %>% 
+  mutate(geopoint = NA_character_,	
+         `_geopoint_latitude` = NA_character_,	
+         `_geopoint_longitude` = NA_character_,	
+         `_geopoint_altitude` = NA_character_
+)
+
 df_prep_cleaning_log <- df_combined_log$cleaning_log %>%
   left_join(tool_support, by = "uuid") %>% 
   relocate(any_of(cols_to_maintain), .after = uuid) %>% 
@@ -336,7 +342,8 @@ df_prep_cleaning_log <- df_combined_log$cleaning_log %>%
                      input_tool_name_col = "name", 
                      input_tool_label_col = "label") %>% 
   filter(!(question %in% c("_index")&issue %in% c("Possible value to be changed to NA"))) %>% 
-  mutate(reviewed = ifelse(question %in% c("duration_audit_sum_all_minutes"), "1", reviewed))
+  mutate(reviewed = ifelse(question %in% c("duration_audit_sum_all_minutes"), "1", reviewed),
+         change_type = ifelse(question %in% c("duration_audit_sum_all_minutes"), "remove_survey", change_type))
 
 df_prep_soft_duplicates_log <- df_check_soft_duplicates$soft_duplicate_log %>%
   left_join(tool_support, by = "uuid") %>%
