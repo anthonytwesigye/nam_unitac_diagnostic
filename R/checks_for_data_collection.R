@@ -72,31 +72,35 @@ outlier_cols_not_4_checking <- df_tool_data %>%
   colnames()
 
 
-# combine cleaningtools checks
+# check value as the initial check
 list_log <- df_tool_data_with_audit_time %>%
-  check_duration(column_to_check = "duration_audit_sum_all_minutes",
-                 uuid_column = "_uuid",
-                 log_name = "duration_log",
-                 lower_bound = 10,
-                 higher_bound = 120) %>%
-  # check_outliers(uuid_column = "_uuid", sm_separator = "/",
-  #                strongness_factor = 3, columns_not_to_check = outlier_cols_not_4_checking) %>% 
   check_value(uuid_column = "_uuid", values_to_look = c(99, 999, 9999))
 
+# check duration
+df_check_duration <- check_duration(dataset = df_tool_data_with_audit_time %>% 
+                                      filter(location_type %in% c("interview_site")),
+                                    column_to_check = "duration_audit_sum_all_minutes",
+                                    uuid_column = "_uuid",
+                                    log_name = "duration_log",
+                                    lower_bound = 10,
+                                    higher_bound = 120)
+  
+list_log$duration_log <- df_check_duration$duration_log %>% 
+  mutate(reviewed = "1")
 
 # other logical checks ----------------------------------------------------
 
 # outliers
 numeric_cols_main_data = c("count_hh_number", "next_resp_age", "how_long_operating_enterprise", 
-                 "num_people_with_similar_job", "gross_salary", "days_worked_in_week", 
-                 "hours_worked_per_day", "num_employed_paid_family", "avg_salary_employed_paid_family", 
-                 "num_employed_unpaid_family", "num_employed_paid_non_family", 
-                 "avg_salary_employed_paid_non_family", "estimated_monthly_sales", 
-                 "estimated_monthly_profit", "enterprise_age", "monthly_value_of_sales_of_enterprise", 
-                 "monthly_value_of_profit_of_enterprise", "number_of_work_days", 
-                 "number_of_work_hours_per_day", "monthly_value_of_sales_of_business", 
-                 "monthly_value_of_profit_of_business", "number_of_work_days_a_week_contributing_worker", 
-                 "work_hours_per_day_contributing_worker")
+                           "num_people_with_similar_job", "gross_salary", "days_worked_in_week", 
+                           "hours_worked_per_day", "num_employed_paid_family", "avg_salary_employed_paid_family", 
+                           "num_employed_unpaid_family", "num_employed_paid_non_family", 
+                           "avg_salary_employed_paid_non_family", "estimated_monthly_sales", 
+                           "estimated_monthly_profit", "enterprise_age", "monthly_value_of_sales_of_enterprise", 
+                           "monthly_value_of_profit_of_enterprise", "number_of_work_days", 
+                           "number_of_work_hours_per_day", "monthly_value_of_sales_of_business", 
+                           "monthly_value_of_profit_of_business", "number_of_work_days_a_week_contributing_worker", 
+                           "work_hours_per_day_contributing_worker")
 
 df_check_outliers <- check_outliers(dataset = df_tool_data_with_audit_time, 
                                     uuid_column = "_uuid", sm_separator = "/",
@@ -117,15 +121,15 @@ df_check_soft_duplicates <-  check_soft_duplicates(dataset = df_tool_data_with_a
 # missing location
 # opuwo, town_council
 missing_opuwo <- c("9dcf420a-19ab-48fb-b704-895da0861c31",
-  "bcfcec7b-23bf-4710-95b3-2be53b7b1613",
-  "3ab2d613-46a4-4df5-96a1-9a1dcb894661",
-  "48e05e94-df31-4e2e-a36d-d741111b8a88") 
+                   "bcfcec7b-23bf-4710-95b3-2be53b7b1613",
+                   "3ab2d613-46a4-4df5-96a1-9a1dcb894661",
+                   "48e05e94-df31-4e2e-a36d-d741111b8a88") 
 
 # okangwati, settlement
 missing_okangwati <- c("bd256c98-0794-493b-8c72-dba0a59e0342",
-  "80b5ccfe-7cd5-4c23-95a5-49f73d7a7c37",
-  "a1757d14-ba10-464a-a1b0-8189059c1bff",
-  "16afa6f1-a01e-440f-880f-0b76e2c73eb4")
+                       "80b5ccfe-7cd5-4c23-95a5-49f73d7a7c37",
+                       "a1757d14-ba10-464a-a1b0-8189059c1bff",
+                       "16afa6f1-a01e-440f-880f-0b76e2c73eb4")
 
 df_missing_loc_level <- df_tool_data %>% 
   filter(is.na(interview_loc_level), !consent %in% c("2")) %>% 
