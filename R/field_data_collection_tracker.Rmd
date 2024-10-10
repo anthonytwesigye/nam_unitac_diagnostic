@@ -37,18 +37,23 @@ df_tool_data <- readxl::read_excel("../inputs/Diagnostic_of_informality_Data.xls
   mutate(uuid = `_uuid`,
          start = as_datetime(start),
          end = as_datetime(end),
-         start_date = as_date(start)) #%>% 
+         start_date = as_date(start),
+         location = case_when(interview_loc_level %in% c("municipality") ~ municipality,
+                              interview_loc_level %in% c("town_council") ~ town_council,
+                              interview_loc_level %in% c("village_council") ~ village_council,
+                              interview_loc_level %in% c("settlement") ~ settlement),
+         int.site_formality = case_when(poi_category %in% c("1")|interview_site_category %in% c("1") ~ "formal",
+                                        poi_category %in% c("2")|interview_site_category %in% c("2") ~ "informal",
+                                        poi_category %in% c("3")|interview_site_category %in% c("3") ~ "household",
+                                        ),
+         site_id = paste0(location, "_", int.site_formality)) #%>% 
   # filter(start_date >= as_date("2024-10-07")) 
 
 # days that contain data
 df_days_for_data_collection <- df_tool_data %>% select(start_date) %>% unique() %>% arrange(start_date) %>% pull()
 
 df_data_support_cl_log <- df_tool_data %>% 
-  mutate(location = case_when(interview_loc_level %in% c("municipality") ~ municipality,
-                              interview_loc_level %in% c("town_council") ~ town_council,
-                              interview_loc_level %in% c("village_council") ~ village_council,
-                              interview_loc_level %in% c("settlement") ~ settlement)) %>% 
-  select(uuid, location)
+  select(uuid, site_id)
 
 
 # cleaning log handling
@@ -100,8 +105,8 @@ df_enum_performance <- df_sites_data %>%
 # surveys for deletion
 df_cl_deletion <- df_cl_log %>% 
   filter(change_type %in% "remove_survey", reviewed == 1) %>%
-  mutate(location = location.y) %>% 
-  distinct(location, uuid)
+  mutate(site_id = site_id.y) %>% 
+  distinct(site_id, uuid)
 
 # functions for changing some options in the table
 dt_set_options<- function(x){
@@ -142,7 +147,7 @@ Last date of data collection: **`r df_days_for_data_collection[length(df_days_fo
 
 ```{r, echo = FALSE}
 df_samp_per_location <- df_samples_required %>% 
-  select(location, samples = sample_size)
+  select(site_id, samples = sample_size)
 
 df_cl_surveys_for_deletion <- df_cl_log %>% 
   filter(change_type == "remove_survey", reviewed == 1) %>% 
@@ -153,17 +158,17 @@ df_cl_surveys_for_deletion <- df_cl_log %>%
 
 
 df_updated_tool_data %>% 
-  group_by(location) %>% 
+  group_by(site_id) %>% 
   summarise(surveys_completed = n()) %>% 
   arrange(location) %>% 
-  right_join(df_samp_per_location, by = "location") %>% 
-  left_join(df_cl_surveys_for_deletion, by = "location") %>% 
+  right_join(df_samp_per_location, by = "site_id") %>% 
+  left_join(df_cl_surveys_for_deletion, by = "site_id") %>% 
   mutate(surveys_completed = ifelse(is.na(surveys_completed), 0, surveys_completed),
          surveys_for_deletion = ifelse(is.na(surveys_for_deletion), 0, surveys_for_deletion),
          int.surveys_and_deletion = surveys_completed - surveys_for_deletion,
          remaining_surveys = samples - int.surveys_and_deletion
   ) %>% 
-  left_join(df_for_colnames, by = "location") %>% 
+  left_join(df_for_colnames, by = "site_id") %>% 
   select(-c(int.surveys_and_deletion)) %>% 
   dt_options_fewcols()
 
