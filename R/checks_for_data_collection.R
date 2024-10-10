@@ -330,7 +330,8 @@ df_prep_cleaning_log <- df_combined_log$cleaning_log %>%
   add_qn_label_to_cl(input_cl_name_col = "question",
                      input_tool = df_survey, 
                      input_tool_name_col = "name", 
-                     input_tool_label_col = "label")
+                     input_tool_label_col = "label") %>% 
+  filter(!(question %in% c("_index")&issue %in% c("Possible value to be changed to NA")))
 
 df_prep_soft_duplicates_log <- df_check_soft_duplicates$soft_duplicate_log %>%
   left_join(tool_support, by = "uuid") %>%
