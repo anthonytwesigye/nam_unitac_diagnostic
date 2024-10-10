@@ -83,45 +83,67 @@ list_log <- df_tool_data_with_audit_time %>%
                  higher_bound = 120) %>%
   check_outliers(uuid_column = "_uuid", sm_separator = "/",
                  strongness_factor = 3, columns_not_to_check = outlier_cols_not_4_checking) %>% 
-  check_soft_duplicates(kobo_survey = df_survey,
-                        uuid_column = "_uuid",
-                        idnk_value = "dk",
-                        sm_separator = "/",
-                        log_name = "soft_duplicate_log",
-                        threshold = 25,
-                        return_all_results = FALSE) %>%
   check_value(uuid_column = "_uuid", values_to_look = c(99, 999, 9999))
-
-# # logical checks
-# df_main_plus_loop_logical_checks <- df_repeat_hh_roster_data %>%
-#   check_logical_with_list(uuid_column = "_uuid",
-#                           list_of_check = df_list_logical_checks,
-#                           check_id_column = "check_id",
-#                           check_to_perform_column = "check_to_perform",
-#                           columns_to_clean_column = "columns_to_clean",
-#                           description_column = "description",
-#                           bind_checks = TRUE )
-# list_log$logical_checks <- df_main_plus_loop_logical_checks$logical_all
 
 
 # other logical checks ----------------------------------------------------
+
+df_check_soft_duplicates <-  check_soft_duplicates(dataset = df_tool_data_with_audit_time, kobo_survey = df_survey,
+                                                   uuid_column = "_uuid",
+                                                   idnk_value = "dk",
+                                                   sm_separator = "/",
+                                                   log_name = "soft_duplicate_log",
+                                                   threshold = 25,
+                                                   return_all_results = FALSE)
+
+# missing location
+df_missing_loc_level <- df_tool_data %>% 
+  filter(is.na(interview_loc_level)) %>% 
+  mutate(i.check.uuid =  `_uuid`,
+         i.check.change_type = "change_response",
+         i.check.question = "municipality-town_council-village_council-settlement",     
+         i.check.old_value =  "", 
+         i.check.new_value = "",     
+         i.check.issue = "missing_location",       
+         i.check.other_text = "",
+         i.check.comment = "",
+         i.check.reviewed = "",
+         i.check.so_sm_choices = "") %>% 
+  batch_select_rename()
+list_log$missing_loc <- df_missing_loc_level
+
+# testing data
+df_testing_data <- df_tool_data %>% 
+  filter(today < as_date("2024-10-07")) %>% 
+  mutate(i.check.uuid =  `_uuid`,
+         i.check.change_type = "remove_survey",
+         i.check.question = "",     
+         i.check.old_value =  "", 
+         i.check.new_value = "",     
+         i.check.issue = "testing_data",       
+         i.check.other_text = "",
+         i.check.comment = "",
+         i.check.reviewed = "",
+         i.check.so_sm_choices = "") %>% 
+  batch_select_rename()
+list_log$testing_data <- df_testing_data
 
 
 # other checks ------------------------------------------------------------
 
 df_other_checks <- scto_other_specify(input_tool_data = df_tool_data, 
-                                             input_uuid_col = "_uuid", 
-                                             input_survey = df_survey, 
-                                             input_choices = df_choices)
+                                      input_uuid_col = "_uuid", 
+                                      input_survey = df_survey, 
+                                      input_choices = df_choices)
 list_log$other_log <- df_other_checks
 
 # other checks roster
 df_other_checks_roster <- ctso_other_specify_repeats(input_repeat_data = df_loop_r_roster, 
-                                                            input_uuid_col = "_submission__uuid", 
-                                                            input_survey = df_survey, 
-                                                            input_choices = df_choices,
-                                                            input_sheet_name = "hh_roster",
-                                                            input_index_col = "_index")
+                                                     input_uuid_col = "_submission__uuid", 
+                                                     input_survey = df_survey, 
+                                                     input_choices = df_choices,
+                                                     input_sheet_name = "hh_roster",
+                                                     input_index_col = "_index")
 list_log$other_log_roster <- df_other_checks_roster
 
 
@@ -161,26 +183,6 @@ list_log$outliers_roster_log_r <- df_potential_loop_outliers_roster_r
 
 df_combined_log <- create_combined_log_keep_change_type(dataset_name = "checked_dataset", list_of_log = list_log)
 
-# # add_info_to_cleaning_log()
-# add_with_info <- add_info_to_cleaning_log(list_of_log = df_combined_log,
-#                                           dataset = "checked_dataset",
-#                                           cleaning_log = "cleaning_log",
-#                                           dataset_uuid_column = "_uuid",
-#                                           cleaning_log_uuid_column = "uuid",
-#                                           information_to_add = c("enumerator_id", "today", "interview_cell")
-# )
-# 
-# 
-# # create_xlsx_cleaning_log()
-# add_with_info |>
-#     create_xlsx_cleaning_log(
-#         kobo_survey = df_survey,
-#         kobo_choices = df_choices,
-#         use_dropdown = TRUE,
-#         output_path = paste0("outputs/", butteR::date_file_prefix(), 
-#                              "_combined_checks_aba_mbarara.xlsx")
-#     )
-
 
 # create workbook ---------------------------------------------------------
 # prep data
@@ -199,6 +201,10 @@ df_prep_cleaning_log <- df_combined_log$cleaning_log %>%
                      input_tool_name_col = "name", 
                      input_tool_label_col = "label")
 
+df_prep_soft_duplicates_log <- df_check_soft_duplicates$soft_duplicate_log %>%
+  left_join(tool_support, by = "uuid") %>%
+  relocate(any_of(cols_to_add_to_log), .after = uuid)
+
 df_prep_readme <- tibble::tribble(
   ~change_type_validation,                       ~description,
   "change_response", "Change the response to new_value",
@@ -209,10 +215,11 @@ df_prep_readme <- tibble::tribble(
 
 wb_log <- createWorkbook()
 
-hs1 <- createStyle(fgFill = "#E34443", textDecoration = "Bold", fontName = "Arial Narrow", fontColour = "white", fontSize = 12, wrapText = F)
+hs1 <- createStyle(fgFill = "#7B7B7B", textDecoration = "Bold", fontName = "Arial Narrow", fontColour = "white", fontSize = 12, wrapText = F)
 
 modifyBaseFont(wb = wb_log, fontSize = 11, fontName = "Arial Narrow")
 
+## checked dataset 
 addWorksheet(wb_log, sheetName="checked_dataset")
 setColWidths(wb = wb_log, sheet = "checked_dataset", cols = 1:ncol(df_prep_checked_data), widths = 24.89)
 writeDataTable(wb = wb_log, sheet = "checked_dataset", 
@@ -223,7 +230,7 @@ writeDataTable(wb = wb_log, sheet = "checked_dataset",
 # freeze pane
 freezePane(wb = wb_log, "checked_dataset", firstActiveRow = 2, firstActiveCol = 2)
 
-
+## cleaning log
 addWorksheet(wb_log, sheetName="cleaning_log")
 setColWidths(wb = wb_log, sheet = "cleaning_log", cols = 1:ncol(df_prep_cleaning_log), widths = 24.89)
 writeDataTable(wb = wb_log, sheet = "cleaning_log", 
@@ -234,6 +241,18 @@ writeDataTable(wb = wb_log, sheet = "cleaning_log",
 # freeze pane
 freezePane(wb = wb_log, "cleaning_log", firstActiveRow = 2, firstActiveCol = 2)
 
+## similar surveys
+addWorksheet(wb_log, sheetName="similar_surveys")
+setColWidths(wb = wb_log, sheet = "similar_surveys", cols = 1:ncol(df_prep_soft_duplicates_log), widths = 24.89)
+writeData(wb = wb_log, sheet = "similar_surveys",
+          x = df_prep_soft_duplicates_log ,
+          startRow = 1, startCol = 1,
+          withFilter = TRUE,
+          headerStyle = hs1)
+# freeze pane
+freezePane(wb = wb_log, "similar_surveys", firstActiveRow = 2, firstActiveCol = 2)
+
+## readme
 addWorksheet(wb_log, sheetName="readme")
 setColWidths(wb = wb_log, sheet = "readme", cols = 1:ncol(df_prep_readme), widths = 24.89)
 writeDataTable(wb = wb_log, sheet = "readme", 
