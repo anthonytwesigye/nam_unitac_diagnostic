@@ -19,9 +19,10 @@ library(glue)
 library(htmlwidgets)
 
 df_samples <- readr::read_csv("../inputs/diagnostic_survey_samples_definition.csv")
+df_samples_poi <- readr::read_csv("../inputs/diagnostic_survey_poi.csv")
 
 df_for_colnames <- df_samples %>% 
-  select(location) %>% 
+  select(site_id) %>% 
   unique()
 
 df_samples_required <- df_samples %>% 
@@ -45,15 +46,15 @@ df_tool_data <- readxl::read_excel("../inputs/Diagnostic_of_informality_Data.xls
          int.site_formality = case_when(poi_category %in% c("1")|interview_site_category %in% c("1") ~ "formal",
                                         poi_category %in% c("2")|interview_site_category %in% c("2") ~ "informal",
                                         poi_category %in% c("3")|interview_site_category %in% c("3") ~ "household",
-                                        ),
+         ),
          site_id = paste0(location, "_", int.site_formality)) #%>% 
-  # filter(start_date >= as_date("2024-10-07")) 
+# filter(start_date >= as_date("2024-10-07")) 
 
 # days that contain data
 df_days_for_data_collection <- df_tool_data %>% select(start_date) %>% unique() %>% arrange(start_date) %>% pull()
 
 df_data_support_cl_log <- df_tool_data %>% 
-  select(uuid, site_id)
+  select(uuid, location_type, site_id)
 
 
 # cleaning log handling
@@ -78,15 +79,15 @@ df_updated_tool_data <- df_tool_data
 uuids_chg_response <- cl_log_change_response %>% pull(uuid) %>% unique()
 
 for (current_uuid in uuids_chg_response) {
-    current_uuid_data <- cl_log_change_response %>%
-        filter(uuid == current_uuid) 
-    print(current_uuid_data)
-    # process current updates
-    df_current_updated <- df_updated_tool_data %>%
-        rows_update(y = current_uuid_data, by = "uuid")
-
-    # update the parent dataset with current updates
-    df_updated_tool_data <- df_current_updated
+  current_uuid_data <- cl_log_change_response %>%
+    filter(uuid == current_uuid) 
+  print(current_uuid_data)
+  # process current updates
+  df_current_updated <- df_updated_tool_data %>%
+    rows_update(y = current_uuid_data, by = "uuid")
+  
+  # update the parent dataset with current updates
+  df_updated_tool_data <- df_current_updated
 }
 
 # seperate site and poi data
@@ -98,15 +99,23 @@ df_pois_data <- df_updated_tool_data %>%
   filter(location_type %in% c("poi"))
 
 # enumerator performance data
-df_enum_performance <- df_sites_data %>% 
+df_enum_performance_surveys <- df_sites_data %>% 
+  mutate(int.survey_time_interval = lubridate::time_length(end - start, unit = "min"),
+         int.survey_time_interval = ceiling(int.survey_time_interval))
+df_enum_performance_poi <- df_pois_data %>% 
   mutate(int.survey_time_interval = lubridate::time_length(end - start, unit = "min"),
          int.survey_time_interval = ceiling(int.survey_time_interval))
 
 # surveys for deletion
-df_cl_deletion <- df_cl_log %>% 
+df_cl_deletion_surveys <- df_cl_log %>% 
+  filter(location_type %in% c("interview_site")) %>% 
   filter(change_type %in% "remove_survey", reviewed == 1) %>%
-  mutate(site_id = site_id.y) %>% 
-  distinct(site_id, uuid)
+  distinct(site_id, uuid, enumerator_id)
+df_cl_deletion_poi <- df_cl_log %>% 
+  filter(location_type %in% c("poi")) %>% 
+  filter(change_type %in% "remove_survey", reviewed == 1) %>%
+  distinct(site_id, uuid, enumerator_id)
+
 
 # functions for changing some options in the table
 dt_set_options<- function(x){
@@ -137,10 +146,10 @@ dt_options_fewcols <- function(x){
 
 ## Summary on the surveys done
 
->The average survey time for the data is: **`r round(mean(df_enum_performance$int.survey_time_interval), 0)`** Minutes
+>The average survey time for the data is: **`r round(mean(df_enum_performance_surveys$int.survey_time_interval), 0)`** Minutes
 
->Total surveys: **`r nrow(df_updated_tool_data)`**,\
-Surveys for deletion: **`r nrow(df_cl_deletion)`**,\
+>Total surveys: **`r nrow(df_sites_data)`**,\
+Surveys for deletion: **`r nrow(df_cl_deletion_surveys)`**,\
 Last date of data collection: **`r df_days_for_data_collection[length(df_days_for_data_collection)]`**.
 
 ### Summary on the surveys per location
@@ -149,18 +158,14 @@ Last date of data collection: **`r df_days_for_data_collection[length(df_days_fo
 df_samp_per_location <- df_samples_required %>% 
   select(site_id, samples = sample_size)
 
-df_cl_surveys_for_deletion <- df_cl_log %>% 
-  filter(change_type == "remove_survey", reviewed == 1) %>% 
-  rename(location = location.y) %>% 
-  group_by(location) %>% 
-  distinct(uuid) %>%
+df_cl_surveys_for_deletion <- df_cl_deletion_surveys %>%  
+  group_by(site_id) %>% 
   summarise(surveys_for_deletion = n())
 
-
-df_updated_tool_data %>% 
+df_sites_data %>% 
   group_by(site_id) %>% 
   summarise(surveys_completed = n()) %>% 
-  arrange(location) %>% 
+  arrange(site_id) %>% 
   right_join(df_samp_per_location, by = "site_id") %>% 
   left_join(df_cl_surveys_for_deletion, by = "site_id") %>% 
   mutate(surveys_completed = ifelse(is.na(surveys_completed), 0, surveys_completed),
@@ -178,8 +183,8 @@ df_updated_tool_data %>%
 
 ```{r, echo = FALSE}
 
-df_enum_performance %>%
-  group_by(location, start_date, enum) %>%
+df_enum_performance_surveys %>%
+  group_by(location, start_date, enumerator_id) %>%
   summarise(number_of_interviews_done = n(), `average_survey_time(minutes)` =    round(mean(int.survey_time_interval, na.rm = TRUE), 0)) %>%
   dt_options_fewcols()
 ```
@@ -189,8 +194,8 @@ df_enum_performance %>%
 
 ```{r, echo = FALSE}
 df_cl_log %>%
-  rename(location = location.y) %>%
-  group_by(location, enum) %>%
+  filter(location_type %in% c("interview_site")) %>% 
+  group_by(site_id, enumerator_id) %>%
   summarise(number_of_issues_by_enum = n()) %>%
   dt_options_fewcols()
 ```
@@ -199,11 +204,8 @@ df_cl_log %>%
 ### Enumerators with surveys for deletion
 
 ```{r, echo = FALSE}
-df_cl_log %>%
-  filter(change_type == "remove_survey", reviewed == 1) %>%
-  rename(location = location.y) %>%
-  distinct(location, uuid, enum) %>%
-  group_by(location, enum) %>%
+df_cl_deletion_surveys %>%
+  group_by(site_id, enumerator_id) %>%
   summarise(number_of_surveys_for_deletion_by_enumerator = n()) %>%
   dt_options_fewcols()
 ```
