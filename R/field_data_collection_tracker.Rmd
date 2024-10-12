@@ -39,7 +39,7 @@ df_survey <- readxl::read_excel(loc_tool, sheet = "survey")
 df_choices <- readxl::read_excel(loc_tool, sheet = "choices")
 
 # data
-df_tool_data <- readxl::read_excel("../inputs/Diagnostic_of_informality_Data.xlsx") %>%
+df_tool_data_no_audit <- readxl::read_excel("../inputs/Diagnostic_of_informality_Data.xlsx") %>%
   mutate(uuid = `_uuid`,
          start = as_datetime(start),
          end = as_datetime(end),
@@ -56,6 +56,12 @@ df_tool_data <- readxl::read_excel("../inputs/Diagnostic_of_informality_Data.xls
          latitude = as.numeric(`_geopoint_latitude`),
          longitude = as.numeric(`_geopoint_longitude`)) #%>% 
 # filter(start_date >= as_date("2024-10-07")) 
+
+# read audit file
+audit_list_data <- cleaningtools::create_audit_list(audit_zip_path = "../inputs/audit_files.zip")
+# add duration from audit
+df_tool_data <- cleaningtools::add_duration_from_audit(df_tool_data_no_audit, uuid_column = "_uuid", audit_list = audit_list_data)
+
 
 # days that contain data
 df_days_for_data_collection <- df_tool_data %>% select(start_date) %>% unique() %>% arrange(start_date) %>% pull()
@@ -155,7 +161,7 @@ dt_options_fewcols <- function(x){
 
 ## Summary on the surveys done
 
->The average survey time for the data is: **`r round(mean(df_enum_performance_surveys$int.survey_time_interval), 0)`** Minutes
+>The average survey time for the data is: **`r round(mean(df_enum_performance_surveys$duration_audit_sum_all_minutes), 0)`** Minutes
 
 >Total surveys: **`r nrow(df_sites_data)`**,\
 Surveys for deletion: **`r nrow(df_cl_deletion_surveys)`**,\
@@ -194,7 +200,7 @@ df_sites_data %>%
 
 df_enum_performance_surveys %>%
   group_by(location, start_date, enumerator_id) %>%
-  summarise(number_of_interviews_done = n(), `average_survey_time(minutes)` =    round(mean(int.survey_time_interval, na.rm = TRUE), 0)) %>%
+  summarise(number_of_interviews_done = n(), `average_survey_time(minutes)` =    round(mean(duration_audit_sum_all_minutes, na.rm = TRUE), 0)) %>%
   dt_options_fewcols()
 ```
 
