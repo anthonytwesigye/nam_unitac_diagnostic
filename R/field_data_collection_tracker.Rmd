@@ -219,6 +219,17 @@ df_cl_log %>%
 
 ```
 
+### Number of other_specify per question by enumerator
+
+```{r, echo = FALSE}
+df_cl_log %>%
+  filter(location_type %in% c("interview_site"), issue %in% c("recode other")) %>% 
+  group_by(enumerator_id, question) %>%
+  summarise(number_of_other_specify = n()) %>%
+  dt_options_fewcols()
+
+```
+
 
 ### Enumerators with surveys for deletion
 
