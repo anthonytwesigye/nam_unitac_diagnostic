@@ -327,13 +327,19 @@ tool_support <- df_combined_log$checked_dataset %>%
                               interview_loc_level %in% c("settlement") ~ settlement)) %>% 
   select(-any_of(cols_to_drop))
 
+# checked data
 df_prep_checked_data <- df_combined_log$checked_dataset %>% 
   mutate(geopoint = NA_character_,	
          `_geopoint_latitude` = NA_character_,	
          `_geopoint_longitude` = NA_character_,	
          `_geopoint_altitude` = NA_character_
 )
+# repeat data
+df_repeat_checked_data <- df_prep_checked_data %>% 
+  select(any_of(tool_support), "_uuid") %>% 
+  left_join(df_loop_r_roster, by = c("_uuid" = "_submission__uuid"))
 
+# log
 df_prep_cleaning_log <- df_combined_log$cleaning_log %>%
   left_join(tool_support, by = "uuid") %>% 
   relocate(any_of(cols_to_maintain), .after = uuid) %>% 
@@ -373,6 +379,17 @@ writeDataTable(wb = wb_log, sheet = "checked_dataset",
                headerStyle = hs1)
 # freeze pane
 freezePane(wb = wb_log, "checked_dataset", firstActiveRow = 2, firstActiveCol = 2)
+
+## checked repeat 
+addWorksheet(wb_log, sheetName="hh_roster")
+setColWidths(wb = wb_log, sheet = "hh_roster", cols = 1:ncol(df_repeat_checked_data), widths = 24.89)
+writeDataTable(wb = wb_log, sheet = "hh_roster", 
+               x = df_repeat_checked_data , 
+               startRow = 1, startCol = 1, 
+               tableStyle = "TableStyleLight9",
+               headerStyle = hs1)
+# freeze pane
+freezePane(wb = wb_log, "hh_roster", firstActiveRow = 2, firstActiveCol = 2)
 
 ## cleaning log
 addWorksheet(wb_log, sheetName="cleaning_log")
