@@ -335,9 +335,8 @@ df_prep_checked_data <- df_combined_log$checked_dataset %>%
          `_geopoint_altitude` = NA_character_
 )
 # repeat data
-df_repeat_checked_data <- df_prep_checked_data %>% 
-  select(any_of(tool_support), "_uuid") %>% 
-  left_join(df_loop_r_roster, by = c("_uuid" = "_submission__uuid"))
+df_repeat_checked_data <- tool_support %>% 
+  left_join(df_loop_r_roster, by = c("uuid" = "_submission__uuid"))
 
 # log
 df_prep_cleaning_log <- df_combined_log$cleaning_log %>%
