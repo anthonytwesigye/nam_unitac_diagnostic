@@ -111,7 +111,12 @@ df_sites_data <- df_updated_tool_data %>%
   filter(location_type %in% c("interview_site"))
 
 df_pois_data <- df_updated_tool_data %>% 
-  filter(location_type %in% c("poi"))
+  filter(location_type %in% c("poi")) %>% 
+  mutate(location = ifelse(is.na(location), case_when(interview_loc_level %in% c("municipality") ~ municipality,
+                              interview_loc_level %in% c("town_council") ~ town_council,
+                              interview_loc_level %in% c("village_council") ~ village_council,
+                              interview_loc_level %in% c("settlement") ~ settlement),
+                           location))
 
 # enumerator performance data
 df_enum_performance_surveys <- df_sites_data %>% 
