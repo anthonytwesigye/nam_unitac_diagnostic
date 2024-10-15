@@ -78,15 +78,15 @@ list_log <- df_tool_data_with_audit_time %>%
 
 # check duration
 df_check_duration <- check_duration(dataset = df_tool_data_with_audit_time %>% 
-                                      filter(location_type %in% c("interview_site")),
+                                      filter(location_type %in% c("interview_site"), consent %in% c("1")),
                                     column_to_check = "duration_audit_sum_all_minutes",
                                     uuid_column = "_uuid",
                                     log_name = "duration_log",
                                     lower_bound = 10,
                                     higher_bound = 120)
-  
+
 list_log$duration_log <- df_check_duration$duration_log
-  
+
 
 # other logical checks ----------------------------------------------------
 
@@ -119,20 +119,17 @@ df_check_soft_duplicates <-  check_soft_duplicates(dataset = df_tool_data_with_a
                                                    return_all_results = FALSE)
 
 # missing location
-# opuwo, town_council
-missing_opuwo <- c("9dcf420a-19ab-48fb-b704-895da0861c31",
-                   "bcfcec7b-23bf-4710-95b3-2be53b7b1613",
-                   "3ab2d613-46a4-4df5-96a1-9a1dcb894661",
-                   "48e05e94-df31-4e2e-a36d-d741111b8a88") 
 
-# okangwati, settlement
-missing_okangwati <- c("bd256c98-0794-493b-8c72-dba0a59e0342",
-                       "80b5ccfe-7cd5-4c23-95a5-49f73d7a7c37",
-                       "a1757d14-ba10-464a-a1b0-8189059c1bff",
-                       "16afa6f1-a01e-440f-880f-0b76e2c73eb4")
+df_reference_data <- df_tool_data %>% 
+  filter(!is.na(interview_loc_level)) %>% 
+  mutate(int.date_device_id = paste0(today,"_",deviceid)) %>% 
+  select(int.date_device_id, region,interview_loc_level,	municipality,	town_council,	
+         village_council,	settlement,	enumerator_id
+  ) %>% 
+  distinct()
 
-df_missing_loc_level <- df_tool_data %>% 
-  filter(is.na(interview_loc_level), !consent %in% c("2")) %>% 
+df_missing_loc_info <- df_tool_data %>% 
+  filter(is.na(interview_loc_level)) %>% 
   mutate(i.check.uuid =  `_uuid`,
          i.check.change_type = "change_response",
          i.check.question = "",     
@@ -142,22 +139,32 @@ df_missing_loc_level <- df_tool_data %>%
          i.check.other_text = "",
          i.check.comment = "",
          i.check.reviewed = "1",
-         i.check.so_sm_choices = "") %>% 
-  slice(rep(1:n(), each = 2)) %>%  
+         i.check.so_sm_choices = "",
+         int.date_device_id = paste0(today,"_",deviceid)) %>% 
+  slice(rep(1:n(), each = 7)) %>%  
   group_by(i.check.uuid, i.check.change_type,  i.check.question,  i.check.old_value) %>%  
   mutate(rank = row_number(),
-         i.check.question = case_when(rank == 1 ~ "interview_loc_level", 
-                                      rank == 2 & i.check.uuid %in% c(missing_opuwo) ~ "town_council",
-                                      rank == 2 & i.check.uuid %in% c(missing_okangwati) ~ "settlement",
+         i.check.question = case_when(rank == 1 ~ "region", 
+                                      rank == 2 ~ "interview_loc_level",
+                                      rank == 3 ~ "municipality",
+                                      rank == 4 ~ "town_council",
+                                      rank == 5 ~ "village_council",
+                                      rank == 6 ~ "settlement",
+                                      rank == 7 ~ "enumerator_id",
          ),
-         i.check.new_value = case_when(rank == 1 & i.check.uuid %in% c(missing_opuwo) ~ "town_council",
-                                       rank == 1 & i.check.uuid %in% c(missing_okangwati) ~ "settlement",
-                                       rank == 2 & i.check.uuid %in% c(missing_opuwo) ~ "opuwo",
-                                       rank == 2 & i.check.uuid %in% c(missing_okangwati) ~ "okangwati",
+         i.check.new_value = case_when(rank == 1 ~ recode(int.date_device_id, !!!setNames(df_reference_data$region, df_reference_data$int.date_device_id)),
+                                       rank == 2 ~ recode(int.date_device_id, !!!setNames(df_reference_data$interview_loc_level, df_reference_data$int.date_device_id)),
+                                       rank == 3 ~ recode(int.date_device_id, !!!setNames(df_reference_data$municipality, df_reference_data$int.date_device_id)),
+                                       rank == 4 ~ recode(int.date_device_id, !!!setNames(df_reference_data$town_council, df_reference_data$int.date_device_id)),
+                                       rank == 5 ~ recode(int.date_device_id, !!!setNames(df_reference_data$village_council, df_reference_data$int.date_device_id)),
+                                       rank == 6 ~ recode(int.date_device_id, !!!setNames(df_reference_data$settlement, df_reference_data$int.date_device_id)),
+                                       rank == 7 ~ recode(int.date_device_id, !!!setNames(df_reference_data$enumerator_id, df_reference_data$int.date_device_id)),
          )
   ) %>% 
-  batch_select_rename()
-list_log$missing_loc <- df_missing_loc_level
+  batch_select_rename() %>% 
+  filter(!is.na(new_value))
+
+list_log$missing_loc <- df_missing_loc_info
 
 # testing data
 df_testing_data <- df_tool_data %>% 
@@ -320,12 +327,14 @@ cols_to_maintain <- c("enumerator_id", "today", "region", "interview_loc_level",
 
 
 tool_support <- df_combined_log$checked_dataset %>% 
-  select(uuid = `_uuid`, any_of(cols_to_add_to_log)) %>% 
+  select(uuid = `_uuid`, deviceid, any_of(cols_to_add_to_log)) %>% 
   mutate(location = case_when(interview_loc_level %in% c("municipality") ~ municipality,
                               interview_loc_level %in% c("town_council") ~ town_council,
                               interview_loc_level %in% c("village_council") ~ village_council,
-                              interview_loc_level %in% c("settlement") ~ settlement)) %>% 
-  select(-any_of(cols_to_drop))
+                              interview_loc_level %in% c("settlement") ~ settlement),
+         int.date_device_id = paste0(today,"_",deviceid),
+         enumerator_id = ifelse(is.na(enumerator_id),recode(int.date_device_id, !!!setNames(df_reference_data$enumerator_id, df_reference_data$int.date_device_id)),enumerator_id) ) %>% 
+  select(-any_of(cols_to_drop), -deviceid)
 
 # checked data
 df_prep_checked_data <- df_combined_log$checked_dataset %>% 
@@ -333,7 +342,7 @@ df_prep_checked_data <- df_combined_log$checked_dataset %>%
          `_geopoint_latitude` = NA_character_,	
          `_geopoint_longitude` = NA_character_,	
          `_geopoint_altitude` = NA_character_
-)
+  )
 # repeat data
 df_repeat_checked_data <- tool_support %>% 
   left_join(df_loop_r_roster, by = c("uuid" = "_submission__uuid"))
