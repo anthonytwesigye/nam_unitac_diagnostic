@@ -1,10 +1,19 @@
-library(tidyverse)
-library(cleaningtools)
-library(httr)
-library(sf)
-library(glue)
-library(supporteR)
-library(openxlsx)
+library(tidyverse) # install.packages("tidyverse")
+library(cleaningtools) # devtools::install_github("impact-initiatives/cleaningtools")
+library(httr) # install.packages("httr")
+library(sf) # install.packages("sf")
+library(glue) # install.packages("glue")
+library(supporteR) # devtools::install_github("twesigye10/supporteR")
+library(openxlsx) # install.packages("openxlsx")
+
+
+# other packages of interest ----------------------------------------------
+
+# install.packages("devtools")
+# devtools::install_github("caldwellst/kobold")
+# devtools::install_github("zackarno/butteR")
+# install.packages("htmlwidgets")
+# install.packages("leaflet")
 
 source("R/support_functions.R")
 source("support_files/credentials.R")
