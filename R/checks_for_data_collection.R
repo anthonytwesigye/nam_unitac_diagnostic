@@ -119,7 +119,9 @@ list_log$outliers_main_data <- df_check_outliers$potential_outliers %>%
   filter(question %in% numeric_cols_main_data)
 
 # soft duplicates
-df_check_soft_duplicates <-  check_soft_duplicates(dataset = df_tool_data_with_audit_time, kobo_survey = df_survey,
+df_check_soft_duplicates <-  check_soft_duplicates(dataset = df_tool_data_with_audit_time %>% 
+                                                     filter(location_type %in% c("interview_site"), consent %in% c("1")), 
+                                                   kobo_survey = df_survey,
                                                    uuid_column = "_uuid",
                                                    idnk_value = "dk",
                                                    sm_separator = "/",
