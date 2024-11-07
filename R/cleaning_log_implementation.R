@@ -156,3 +156,30 @@ df_updating_sm_parents_roster <- cts_update_sm_parent_cols(input_df_cleaning_ste
                                                            input_sheet_name = "hh_roster", 
                                                            input_index_col = "_index")
 
+
+
+# export datasets ---------------------------------------------------------
+
+list_of_datasets <- list("raw_data" = df_tool_data %>% select(-any_of(cols_to_remove)),
+                         "raw_roster" = df_loop_r_roster %>% select(-any_of(cols_to_remove_roster)),
+                         "raw_income_received" = df_loop_r_income,
+                         "cleaned_data" = df_updating_sm_parents$updated_sm_parents %>% 
+                           filter(!`_uuid` %in% df_remove_survey_cl$uuid),
+                         "cleaned_roster" = df_updating_sm_parents_roster$updated_sm_parents %>% 
+                           filter(!`_submission__uuid` %in% df_remove_survey_cl$uuid) %>% 
+                           select(-cleaning_uuid)
+)
+
+openxlsx::write.xlsx(list_of_datasets,
+                     paste0("outputs/", butteR::date_file_prefix(), "_diagnostic_of_informality_data.xlsx"),
+                     overwrite = TRUE)
+
+# export datasets ---------------------------------------------------------
+
+list_of_extra_logs <- list("extra_log_sm_parents" = df_updating_sm_parents$extra_log_sm_parents,
+                           "extra_log_sm_parents_roster" = df_updating_sm_parents_roster$extra_log_sm_parents
+)
+
+openxlsx::write.xlsx(list_of_extra_logs,
+                     paste0("outputs/", butteR::date_file_prefix(), "_extra_sm_parent_changes_checks_diagnostic_of_informality.xlsx"),
+                     overwrite = TRUE)
