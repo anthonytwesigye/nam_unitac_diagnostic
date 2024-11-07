@@ -89,4 +89,70 @@ df_updating_sm_parents <- cts_update_sm_parent_cols(input_df_cleaning_step_data 
                                                     input_uuid_col = "_uuid",
                                                     input_point_id_col = "point_number",
                                                     input_collected_date_col = "today",
-                                                    input_location_col = "interview_cell")
+                                                    input_location_col = "location")
+
+# tool data to support loops ----------------------------------------------
+
+df_tool_support_data_for_loops <- df_updating_sm_parents$updated_sm_parents %>% 
+  filter(!`_uuid` %in% df_remove_survey_cl$uuid) %>% 
+  select(`_uuid`, today, enumerator_id, location)
+
+# roster cleaning ---------------------------------------------------------
+
+# filtered log
+df_filled_cl_roster <- df_filled_cl %>% 
+  filter(sheet %in% c("hh_roster"), !is.na(index))
+
+# updating the main dataset with new columns
+
+df_data_with_added_cols_roster <- cts_add_new_sm_choices_to_data(input_df_tool_data = df_loop_r_roster %>% 
+                                                                   left_join(df_tool_support_data_for_loops, by = c("_submission__uuid" = "_uuid")),
+                                                                 input_df_filled_cl = df_filled_cl_roster, 
+                                                                 input_df_survey = df_survey,
+                                                                 input_df_choices = df_choices)
+
+# check the cleaning log
+df_cl_review <- cleaningtools::review_cleaning_log(
+  raw_dataset = df_data_with_added_cols_roster,
+  raw_data_uuid_column = "_submission__uuid",
+  cleaning_log = df_filled_cl_roster,
+  cleaning_log_change_type_column = "change_type",
+  change_response_value = "change_response",
+  cleaning_log_question_column = "question",
+  cleaning_log_uuid_column = "uuid",
+  cleaning_log_new_value_column = "new_value")
+
+# filter log for cleaning
+df_final_cleaning_log_roster <- df_filled_cl_roster %>% 
+  filter(!question %in% c("duration_audit_sum_all_ms", "duration_audit_sum_all_minutes", "phone_consent",
+                          "_index", "_parent_index"), 
+         !uuid %in% c("all")) %>% 
+  filter(!str_detect(string = question, pattern = "\\w+\\/$"))
+
+# create the clean data from the raw data and cleaning log
+df_cleaning_step_roster <- cleaningtools::create_clean_data(
+  raw_dataset = df_data_with_added_cols_roster %>% 
+    mutate(cleaning_uuid = paste0(`_submission__uuid`, `_index`)),
+  raw_data_uuid_column = "cleaning_uuid",
+  cleaning_log = df_final_cleaning_log_roster %>% 
+    mutate(log_cleaning_uuid = paste0(uuid, index)),
+  cleaning_log_change_type_column = "change_type",
+  change_response_value = "change_response",
+  NA_response_value = "blank_response",
+  no_change_value = "no_action",
+  remove_survey_value = "remove_survey",
+  cleaning_log_question_column = "question",
+  cleaning_log_uuid_column = "log_cleaning_uuid",
+  cleaning_log_new_value_column = "new_value")
+
+# handle parent question columns
+df_updating_sm_parents_roster <- cts_update_sm_parent_cols(input_df_cleaning_step_data = df_cleaning_step_roster,
+                                                           input_uuid_col = "_submission__uuid",
+                                                           input_enumerator_id_col = "enumerator_id",
+                                                           input_point_id_col = "point_number",
+                                                           input_collected_date_col = "today",
+                                                           input_location_col = "location", 
+                                                           input_dataset_type = "loop", 
+                                                           input_sheet_name = "hh_roster", 
+                                                           input_index_col = "_index")
+
