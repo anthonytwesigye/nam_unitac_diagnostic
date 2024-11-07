@@ -39,4 +39,15 @@ cols_to_remove <- c("audit", "audit_URL",
                     "instance_name", "_geopoint_latitude", "_geopoint_longitude",
                     "_geopoint_altitude", "_geopoint_precision")
 
+# Main dataset ------------------------------------------------------------
 
+# filtered log
+df_filled_cl_main <- df_filled_cl %>% 
+  filter(is.na(sheet))
+
+# updating the main dataset with new columns
+
+df_data_with_added_cols <- cts_add_new_sm_choices_to_data(input_df_tool_data = df_tool_data,
+                                                          input_df_filled_cl = df_filled_cl_main, 
+                                                          input_df_survey = df_survey,
+                                                          input_df_choices = df_choices)
