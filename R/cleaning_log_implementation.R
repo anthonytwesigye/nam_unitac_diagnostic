@@ -71,8 +71,7 @@ df_final_cleaning_log <- df_filled_cl_main %>%
 
 # create the clean data from the raw data and cleaning log
 df_cleaning_step <- cleaningtools::create_clean_data(
-  raw_dataset = df_data_with_added_cols %>% select(-any_of(cols_to_remove)) %>% 
-    rename(`shelter_damage_issues/lack_of_space_inside_the_shelter_min_35m2_per_household_member` = `shelter_damage_issues/lack_of_space_inside_the_shelter_min_35m²_per_household_member`),
+  raw_dataset = df_data_with_added_cols %>% select(-any_of(cols_to_remove)),
   raw_data_uuid_column = "_uuid",
   cleaning_log = df_final_cleaning_log,
   cleaning_log_change_type_column = "change_type",
