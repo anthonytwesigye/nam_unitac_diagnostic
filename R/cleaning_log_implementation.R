@@ -51,3 +51,42 @@ df_data_with_added_cols <- cts_add_new_sm_choices_to_data(input_df_tool_data = d
                                                           input_df_filled_cl = df_filled_cl_main, 
                                                           input_df_survey = df_survey,
                                                           input_df_choices = df_choices)
+
+# check the cleaning log
+df_cl_review <- cleaningtools::review_cleaning_log(
+  raw_dataset = df_data_with_added_cols,
+  raw_data_uuid_column = "_uuid",
+  cleaning_log = df_filled_cl_main,
+  cleaning_log_change_type_column = "change_type",
+  change_response_value = "change_response",
+  cleaning_log_question_column = "question",
+  cleaning_log_uuid_column = "uuid",
+  cleaning_log_new_value_column = "new_value")
+
+# filter log for cleaning
+df_final_cleaning_log <- df_filled_cl_main %>% 
+  filter(!question %in% c("duration_audit_sum_all_ms", "duration_audit_sum_all_minutes", "phone_consent"), 
+         !uuid %in% c("all")) %>% 
+  filter(!str_detect(string = question, pattern = "\\w+\\/$"))
+
+# create the clean data from the raw data and cleaning log
+df_cleaning_step <- cleaningtools::create_clean_data(
+  raw_dataset = df_data_with_added_cols %>% select(-any_of(cols_to_remove)) %>% 
+    rename(`shelter_damage_issues/lack_of_space_inside_the_shelter_min_35m2_per_household_member` = `shelter_damage_issues/lack_of_space_inside_the_shelter_min_35m²_per_household_member`),
+  raw_data_uuid_column = "_uuid",
+  cleaning_log = df_final_cleaning_log,
+  cleaning_log_change_type_column = "change_type",
+  change_response_value = "change_response",
+  NA_response_value = "blank_response",
+  no_change_value = "no_action",
+  remove_survey_value = "remove_survey",
+  cleaning_log_question_column = "question",
+  cleaning_log_uuid_column = "uuid",
+  cleaning_log_new_value_column = "new_value")
+
+# handle parent question columns
+df_updating_sm_parents <- cts_update_sm_parent_cols(input_df_cleaning_step_data = df_cleaning_step, 
+                                                    input_uuid_col = "_uuid",
+                                                    input_point_id_col = "point_number",
+                                                    input_collected_date_col = "today",
+                                                    input_location_col = "interview_cell")
