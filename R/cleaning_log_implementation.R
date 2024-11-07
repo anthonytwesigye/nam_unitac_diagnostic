@@ -25,5 +25,18 @@ df_choices <- readxl::read_excel(loc_tool, sheet = "choices")
 df_filled_cl <- readxl::read_excel("inputs/combined_checks_nam_diagnostic.xlsx", sheet = "cleaning_log") %>% 
   filter(!is.na(reviewed), !question %in% c("_index"), !uuid %in% c("all"))
 
+# surveys for deletion
 df_remove_survey_cl <- df_filled_cl %>% 
   filter(change_type %in% c("remove_survey"))
+
+# check pii ---------------------------------------------------------------
+pii_from_data <- cleaningtools::check_pii(dataset = df_tool_data, element_name = "checked_dataset", uuid_column = "_uuid")
+pii_from_data$potential_PII
+
+# then determine wich columns to remove from both the raw and clean data
+cols_to_remove <- c("audit", "audit_URL", 
+                    "latitude", "longitude", "geopoint",
+                    "instance_name", "_geopoint_latitude", "_geopoint_longitude",
+                    "_geopoint_altitude", "_geopoint_precision")
+
+
