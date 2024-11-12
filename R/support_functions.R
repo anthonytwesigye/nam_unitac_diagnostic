@@ -135,7 +135,7 @@ ctso_other_specify_repeats <- function(input_repeat_data,
                                                             index) %>%
                                                      filter(!is.na(other_text), !other_text %in% c(" ", "NA")) %>%
                                                      mutate(other_name = .x,
-                                                            int.my_current_val_extract = ifelse(str_detect(current_value, "\\b98\\b"), str_extract_all(string = current_value, pattern = "\\bo98\\b|\\w+_98\\b"), current_value),
+                                                            int.my_current_val_extract = ifelse(str_detect(current_value, "\\b98\\b"), str_extract_all(string = current_value, pattern = "\\b98\\b|\\w+_98\\b"), current_value),
                                                             value = "",
                                                             parent_qn = str_replace_all(string = .x, pattern = "_other$", replacement = ""),
                                                             across(.cols = !contains("date"), .fns = as.character))
