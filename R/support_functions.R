@@ -148,8 +148,9 @@ ctso_other_specify_repeats <- function(input_repeat_data,
     
     # get choices to add to the _other responses extracted
     df_grouped_choices <- input_choices %>%
+        mutate(int.value = glue::glue("{name} : {label}")) %>%
         group_by(list_name) %>%
-        summarise(choice_options = stringr::str_trunc(paste(name, collapse = " : "), 1000)) %>%
+        summarise(choice_options = stringr::str_trunc(paste(int.value, collapse = " // "), 1000)) %>% # changed 'name' to 'value' for scto
         arrange(list_name)
     
     # extract parent question and join survey for extracting list_name
