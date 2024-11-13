@@ -295,7 +295,7 @@ df_type_of_work_options <- df_loop_r_roster  %>%
 list_log$type_of_work_options <- df_type_of_work_options
 
 
-# estimated_monthly_profit greater than estimated_monthly_sales
+# logic: estimated_monthly_profit greater than estimated_monthly_sales
 # estimated_monthly_sales
 # estimated_monthly_profit
 df_est_monthly_sales <- df_tool_data  %>%  
@@ -314,6 +314,27 @@ df_est_monthly_sales <- df_tool_data  %>%
   batch_select_rename()
 
 list_log$est_monthly_sales <- df_est_monthly_sales
+
+
+# logical: monthly_value_of_profit_of_enterprise greater than monthly_value_of_sales_of_enterprise
+# monthly_value_of_sales_of_enterprise
+# monthly_value_of_profit_of_enterprise
+df_sales_of_enterprise <- df_tool_data  %>%  
+  filter(monthly_value_of_sales_of_enterprise > monthly_value_of_profit_of_enterprise) %>% 
+  mutate(i.check.uuid = `_uuid`,
+         i.check.change_type = "change_response",
+         i.check.question = "monthly_value_of_sales_of_enterprise",
+         i.check.old_value = as.character(monthly_value_of_sales_of_enterprise),
+         i.check.new_value = "NA",
+         i.check.issue = "logical check",
+         i.check.description = glue("monthly_value_of_sales_of_enterprise: {monthly_value_of_sales_of_enterprise} greater than monthly_value_of_profit_of_enterprise: {monthly_value_of_profit_of_enterprise}"),
+         i.check.other_text = "",
+         i.check.comment = "",
+         i.check.reviewed = "1",
+         i.check.so_sm_choices = "") %>% 
+  batch_select_rename()
+
+list_log$sales_of_enterprise <- df_sales_of_enterprise 
 
 
 # other checks ------------------------------------------------------------
