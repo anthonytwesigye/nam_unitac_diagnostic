@@ -22,7 +22,13 @@ loc_tool <- "inputs/Diagnostic_of_informality_Tool.xlsx"
 df_survey <- readxl::read_excel(loc_tool, sheet = "survey")
 df_choices <- readxl::read_excel(loc_tool, sheet = "choices")
 
-df_filled_cl <- readxl::read_excel("inputs/combined_checks_nam_diagnostic.xlsx", sheet = "cleaning_log") %>% 
+# cleaning log 
+log_data <- "inputs/combined_checks_nam_diagnostic.xlsx"
+log_nms <- names(readxl::read_excel(path = log_data, sheet = "cleaning_log", n_max = 6000))
+c_types_log <- case_when(str_detect(string = log_nms, pattern = "index|reviewed") ~ "numeric", 
+                         str_detect(string = log_nms, pattern = "sheet|other_text") ~ "text",
+                         TRUE ~ "guess")
+df_filled_cl <- readxl::read_excel(log_data, sheet = "cleaning_log", col_types = c_types_log) %>% 
   filter(!is.na(reviewed), !question %in% c("_index"), !uuid %in% c("all"))
 
 # surveys for deletion
