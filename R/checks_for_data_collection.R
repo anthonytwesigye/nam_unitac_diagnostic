@@ -274,6 +274,27 @@ df_responsibility_for_business <- df_tool_data %>%
 list_log$responsibility_for_business <- df_responsibility_for_business
 
 
+# fixing options for type_of_work_done (taxi driver)
+df_type_of_work_options <- df_loop_r_roster  %>%  
+  filter(type_of_work_done %in% c("22")) %>% 
+  mutate(i.check.uuid = `_submission__uuid`,
+         i.check.change_type = "change_response",
+         i.check.question = "type_of_work_done",
+         i.check.old_value = as.character(type_of_work_done),
+         i.check.new_value = "23",
+         i.check.issue = "logical check",
+         i.check.description = "Fixing option on type_of_work_done",
+         i.check.other_text = "",
+         i.check.comment = "",
+         i.check.reviewed = "1",
+         i.check.so_sm_choices = "",
+         i.check.sheet = "hh_roster",
+         i.check.index = `_index`) %>% 
+  batch_select_rename()
+
+list_log$type_of_work_options <- df_type_of_work_options
+
+
 # other checks ------------------------------------------------------------
 
 df_other_checks <- scto_other_specify(input_tool_data = df_tool_data, 
