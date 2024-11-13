@@ -78,7 +78,6 @@ df_cl_review <- cleaningtools::review_cleaning_log(
 # interview site data
 
 df_interview_site_data <- df_data_with_added_cols %>% 
-  select(-any_of(cols_to_remove)) %>% 
   filter(location_type %in% c("interview_site"))
 
 # filter log for cleaning
@@ -107,7 +106,8 @@ df_updating_sm_parents <- cts_update_sm_parent_cols(input_df_cleaning_step_data 
                                                     input_uuid_col = "_uuid",
                                                     input_point_id_col = "point_number",
                                                     input_collected_date_col = "today",
-                                                    input_location_col = "location")
+                                                    input_location_col = "location") %>% 
+  select(-any_of(cols_to_remove))
 
 
 # poi data ----------------------------------------------------------------
@@ -348,3 +348,4 @@ saveWorkbook(wb_cleaned_data, paste0("outputs/", butteR::date_file_prefix(),"_di
 openXL(file = paste0("outputs/", butteR::date_file_prefix(),"_diagnostic_of_informality_data.xlsx"))
 
 saveWorkbook(wb_log, paste0("support_files/diagnostic_of_informality_data.xlsx"), overwrite = TRUE)
+
