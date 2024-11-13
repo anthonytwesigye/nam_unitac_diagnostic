@@ -295,6 +295,29 @@ df_type_of_work_options <- df_loop_r_roster  %>%
 list_log$type_of_work_options <- df_type_of_work_options
 
 
+
+# estimated_monthly_profit greater than estimated_monthly_sales
+
+# estimated_monthly_sales
+# estimated_monthly_profit
+df_est_monthly_sales <- df_tool_data  %>%  
+  filter(estimated_monthly_profit > estimated_monthly_sales) %>% 
+  mutate(i.check.uuid = `_uuid`,
+         i.check.change_type = "change_response",
+         i.check.question = "estimated_monthly_profit",
+         i.check.old_value = as.character(estimated_monthly_profit),
+         i.check.new_value = "NA",
+         i.check.issue = "logical check",
+         i.check.description = glue("estimated_monthly_profit: {estimated_monthly_profit} greater than estimated_monthly_sales: {estimated_monthly_sales}"),
+         i.check.other_text = "",
+         i.check.comment = "",
+         i.check.reviewed = "1",
+         i.check.so_sm_choices = "") %>% 
+  batch_select_rename()
+
+list_log$est_monthly_sales <- df_est_monthly_sales
+
+
 # other checks ------------------------------------------------------------
 
 df_other_checks <- scto_other_specify(input_tool_data = df_tool_data, 
