@@ -9,7 +9,12 @@ loc_data <- "inputs/Diagnostic_of_informality_Data.xlsx"
 # main data
 data_nms <- names(readxl::read_excel(path = loc_data, n_max = 300))
 c_types <- ifelse(str_detect(string = data_nms, pattern = "_other$"), "text", "guess")
-df_tool_data <- readxl::read_excel(loc_data, col_types = c_types)
+df_tool_data <- readxl::read_excel(loc_data, col_types = c_types) %>% 
+  mutate(point_number = paste0("pt_", row_number()),
+         location = case_when(interview_loc_level %in% c("municipality") ~ municipality,
+                              interview_loc_level %in% c("town_council") ~ town_council,
+                              interview_loc_level %in% c("village_council") ~ village_council,
+                              interview_loc_level %in% c("settlement") ~ settlement))
 
 # loops
 # roster
@@ -100,7 +105,7 @@ df_updating_sm_parents <- cts_update_sm_parent_cols(input_df_cleaning_step_data 
 
 df_tool_support_data_for_loops <- df_updating_sm_parents$updated_sm_parents %>% 
   filter(!`_uuid` %in% df_remove_survey_cl$uuid) %>% 
-  select(`_uuid`, today, enumerator_id, location)
+  select(`_uuid`, today, enumerator_id, point_number, location)
 
 # roster cleaning ---------------------------------------------------------
 
@@ -166,8 +171,7 @@ df_updating_sm_parents_roster <- cts_update_sm_parent_cols(input_df_cleaning_ste
 # export datasets ---------------------------------------------------------
 
 list_of_datasets <- list("raw_data" = df_tool_data %>% select(-any_of(cols_to_remove)),
-                         "raw_roster" = df_loop_r_roster %>% select(-any_of(cols_to_remove_roster)),
-                         "raw_income_received" = df_loop_r_income,
+                         "raw_roster" = df_loop_r_roster,
                          "cleaned_data" = df_updating_sm_parents$updated_sm_parents %>% 
                            filter(!`_uuid` %in% df_remove_survey_cl$uuid),
                          "cleaned_roster" = df_updating_sm_parents_roster$updated_sm_parents %>% 
