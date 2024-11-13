@@ -295,9 +295,7 @@ df_type_of_work_options <- df_loop_r_roster  %>%
 list_log$type_of_work_options <- df_type_of_work_options
 
 
-
 # estimated_monthly_profit greater than estimated_monthly_sales
-
 # estimated_monthly_sales
 # estimated_monthly_profit
 df_est_monthly_sales <- df_tool_data  %>%  
