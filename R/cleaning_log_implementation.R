@@ -45,10 +45,11 @@ pii_from_data <- cleaningtools::check_pii(dataset = df_tool_data, element_name =
 pii_from_data$potential_PII
 
 # then determine wich columns to remove from both the raw and clean data
-cols_to_remove <- c("audit", "audit_URL", 
+cols_to_remove <- c("deviceid", "audit", "audit_URL", 
                     "latitude", "longitude", "geopoint",
                     "instance_name", "_geopoint_latitude", "_geopoint_longitude",
-                    "_geopoint_altitude", "_geopoint_precision")
+                    "_geopoint_altitude", "_geopoint_precision",
+                    "point_number", "location")
 
 # Main dataset ------------------------------------------------------------
 
@@ -100,6 +101,38 @@ df_updating_sm_parents <- cts_update_sm_parent_cols(input_df_cleaning_step_data 
                                                     input_point_id_col = "point_number",
                                                     input_collected_date_col = "today",
                                                     input_location_col = "location")
+
+
+# poi data ----------------------------------------------------------------
+
+cols_to_remove_poi <- c("deviceid", "audit", "audit_URL",
+                    "point_number", "location")
+
+df_poi_data <- df_data_with_added_cols %>% 
+  filter(location_type %in% c("poi"))
+
+# filter log for cleaning
+df_poi_log <- df_filled_cl_main %>% 
+  filter(!question %in% c("duration_audit_sum_all_ms", "duration_audit_sum_all_minutes", "phone_consent"), 
+         !uuid %in% c("all")) %>% 
+  filter(uuid %in% df_poi_data$`_uuid`)
+
+
+# create the clean data from the raw data and cleaning log
+df_cleaning_step_poi <- cleaningtools::create_clean_data(
+  raw_dataset = df_poi_data,
+  raw_data_uuid_column = "_uuid",
+  cleaning_log = df_poi_log,
+  cleaning_log_change_type_column = "change_type",
+  change_response_value = "change_response",
+  NA_response_value = "blank_response",
+  no_change_value = "no_action",
+  remove_survey_value = "remove_survey",
+  cleaning_log_question_column = "question",
+  cleaning_log_uuid_column = "uuid",
+  cleaning_log_new_value_column = "new_value") %>% 
+  janitor::remove_empty(which = "cols") %>% 
+  select(-any_of(cols_to_remove_poi))
 
 # tool data to support loops ----------------------------------------------
 
@@ -175,8 +208,10 @@ list_of_datasets <- list("raw_data" = df_tool_data %>% select(-any_of(cols_to_re
                          "cleaned_data" = df_updating_sm_parents$updated_sm_parents %>% 
                            filter(!`_uuid` %in% df_remove_survey_cl$uuid),
                          "cleaned_roster" = df_updating_sm_parents_roster$updated_sm_parents %>% 
-                           filter(!`_submission__uuid` %in% df_remove_survey_cl$uuid) %>% 
-                           select(-cleaning_uuid)
+                           filter(!`_submission__uuid` %in% df_remove_survey_cl$uuid, location_type %in% c("interview_site")) %>% 
+                           select(-cleaning_uuid),
+                         "poi_data" = df_updating_sm_parents$updated_sm_parents %>% 
+                           filter(location_type %in% c("poi")),
 )
 
 openxlsx::write.xlsx(list_of_datasets,
