@@ -30,7 +30,9 @@ all_loa <- read_csv("inputs/r_loa_nam_diagnostic.csv") %>%
 # data with composites ----------------------------------------------------
 
 # main data with composites
-df_data_with_composites <- df_main_clean_data
+df_data_with_composites <- df_main_clean_data %>% 
+  mutate(i.respondent_age = ifelse(is.na(next_resp_age), init_resp_age, next_resp_age),
+         i.respondent_gender = ifelse(is.na(next_resp_gender), init_resp_gender, next_resp_gender))
 
 # roster
 df_clean_loop_r_roster_with_composites <- df_clean_loop_r_roster
@@ -74,8 +76,8 @@ df_roster_analysis <- analysistools::create_analysis(design = roster_svy,
 
 # combine the tables
 
-df_combined_tables <- bind_rows(df_main_analysis$results_table,
-                                df_roster_analysis$results_table) %>% 
+df_combined_tables <- bind_rows(df_main_analysis$results_table %>% mutate(dataset = "main"),
+                                df_roster_analysis$results_table %>% mutate(dataset = "roster")) %>% 
   filter(!(analysis_type %in% c("prop_select_one", "prop_select_multiple") & (is.na(analysis_var_value) | analysis_var_value %in% c("NA"))))
 
 # df_analysis_table <- presentresults::create_table_variable_x_group(results_table = df_combined_tables)
