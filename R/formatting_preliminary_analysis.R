@@ -120,7 +120,8 @@ df_choices_support <- df_choices %>%
 df_unformatted_analysis <- read_csv("outputs/non_formatted_analysis_nam_diagnostic.csv") %>% 
     mutate(#group_var = str_replace_all(string = group_var, pattern = "%/%",replacement = "x"),
     #group_var_value = str_replace_all(string = group_var_value, pattern = "%/%",replacement = "x"),
-    int.analysis_var = ifelse(str_detect(string = analysis_var, pattern = "^i\\."), str_replace(string = analysis_var, pattern = "^i\\.", replacement = ""), analysis_var),
+    # int.analysis_var = ifelse(str_detect(string = analysis_var, pattern = "^i\\."), str_replace(string = analysis_var, pattern = "^i\\.", replacement = ""), analysis_var),
+    int.analysis_var = analysis_var,
     analysis_choice_id = paste0(int.analysis_var, "_", analysis_var_value),
     analysis_var_value_label = ifelse(analysis_choice_id %in% df_choices_support$survey_choice_id, recode(analysis_choice_id, !!!setNames(df_choices_support$choice_label, df_choices_support$survey_choice_id)), analysis_var_value),
     Indicator = ifelse(int.analysis_var %in% df_tool_support$qn_name, recode(int.analysis_var, !!!setNames(df_tool_support$label, df_tool_support$qn_name)), int.analysis_var),
@@ -134,7 +135,8 @@ df_analysis_wide <- df_unformatted_analysis %>%
   mutate(group_var_value = ifelse(is.na(group_var_value), "total", group_var_value)) %>% 
   pivot_wider(names_from = c(group_var_value), values_from = c(stat, n)) %>% 
   # pivot_wider(names_from = c(group_var_value, population), values_from = c(stat, n)) %>% 
-  mutate(row_id = row_number())
+  mutate(row_id = row_number()) %>% 
+  relocate(dataset, .after = "n_total")
 
 
 
@@ -165,7 +167,7 @@ df_extracted_header <- bind_rows(df_extracted_header_data) %>%
 
 wb <- createWorkbook()
 
-hs1 <- createStyle(fgFill = "#EE5859", halign = "CENTER", textDecoration = "Bold", fontColour = "white", fontSize = 14, wrapText = T, 
+hs1 <- createStyle(fgFill = "#049dd9", halign = "CENTER", textDecoration = "Bold", fontColour = "white", fontSize = 14, wrapText = T, 
                    border = "TopBottomLeftRight", borderStyle = "medium", borderColour = "#000000")
 hs2 <- createStyle(fgFill = "grey", halign = "LEFT", textDecoration = "Bold", fontColour = "white", wrapText = F)
 hs2_no_bold <- createStyle(fgFill = "grey", halign = "LEFT", textDecoration = "", fontColour = "white", wrapText = F)
@@ -188,10 +190,11 @@ addWorksheet(wb, sheetName="Diagnostic")
 writeData(wb, sheet = "Diagnostic", df_extracted_header %>% head(1), startCol = 2, 
           startRow = 1, headerStyle = hs2, colNames = FALSE, 
           borders = "all", borderColour = "#000000", borderStyle = "thin")
+addStyle(wb, sheet = "Diagnostic", hs1, rows = 1, cols = 1:5, gridExpand = TRUE)
 
 setColWidths(wb = wb, sheet = "Diagnostic", cols = 1, widths = 70)
 setColWidths(wb = wb, sheet = "Diagnostic", cols = 2, widths = 26)
-setColWidths(wb = wb, sheet = "Diagnostic", cols = 3:4, widths = 10)
+setColWidths(wb = wb, sheet = "Diagnostic", cols = 3:5, widths = 10)
 
 # split variables to be written in different tables with in a sheet
 sheet_variables_data <- split(df_analysis_wide, factor(df_analysis_wide$analysis_var, levels = unique(df_analysis_wide$analysis_var)))
@@ -205,6 +208,7 @@ for (i in 1:length(sheet_variables_data)) {
   get_question <- current_variable_data %>% select(analysis_var) %>% unique() %>% pull()
   get_question_label <- current_variable_data %>% select(Indicator) %>% unique() %>% pull()
   get_qn_type <- current_variable_data %>% select(analysis_type) %>% unique() %>% pull()
+  get_dataset_type <- current_variable_data %>% select(dataset) %>% unique() %>% pull()
   
   if(get_qn_type %in% c("prop_select_one", "prop_select_multiple")){
     for(n in cols_for_num_pct_formatting){class(current_variable_data[[n]])= "percentage"}
@@ -220,7 +224,8 @@ for (i in 1:length(sheet_variables_data)) {
   # add header for variable
   writeData(wb, sheet = "Diagnostic", get_question_label, startCol = 1, startRow = previous_row_end + 1)
   writeData(wb, sheet = "Diagnostic", get_qn_type, startCol = 2, startRow = previous_row_end + 1)
-  addStyle(wb, sheet = "Diagnostic", hs2, rows = previous_row_end + 1, cols = 1:2, gridExpand = TRUE)
+  writeData(wb, sheet = "Diagnostic", get_dataset_type, startCol = 5, startRow = previous_row_end + 1)
+  addStyle(wb, sheet = "Diagnostic", hs2, rows = previous_row_end + 1, cols = 1:5, gridExpand = TRUE)
   
   # current_data_length <- max(current_variable_data$row_id) - min(current_variable_data$row_id)
   current_data_length <- nrow(current_variable_data)
@@ -232,7 +237,7 @@ for (i in 1:length(sheet_variables_data)) {
             x = current_variable_data %>% 
               select(-any_of(c("analysis_var", "int.analysis_var", "analysis_var_value",
                         "analysis_choice_id", "Indicator",
-                        "row_id"))
+                        "row_id", "dataset"))
               ) %>% 
               mutate(analysis_type = NA_character_) %>% 
               arrange(desc(stat_total)), 
@@ -248,5 +253,5 @@ freezePane(wb, "Diagnostic", firstActiveRow = 2, firstActiveCol = 3)
 
 # openXL(wb)
 
-saveWorkbook(wb, paste0("outputs/", butteR::date_file_prefix(),"_UGA2402_formatted_analysis_nam_diagnostic.xlsx"), overwrite = TRUE)
-openXL(file = paste0("outputs/", butteR::date_file_prefix(),"_UGA2402_formatted_analysis_nam_diagnostic.xlsx"))
+saveWorkbook(wb, paste0("outputs/", butteR::date_file_prefix(),"_formatted_analysis_nam_diagnostic.xlsx"), overwrite = TRUE)
+openXL(file = paste0("outputs/", butteR::date_file_prefix(),"_formatted_analysis_nam_diagnostic.xlsx"))
