@@ -18,9 +18,25 @@ df_tool_select_type <- df_survey %>%
   separate(col = type, into = c("select_type", "list_name"), sep =" ", remove = TRUE, extra = "drop" )
 
 # tool support
+df_added_composite_qns <- tibble::tribble(
+  ~qn_name,                ~label,
+  "i.respondent_age",   "Respondent age",
+  "i.respondent_gender", "Respondent gender",
+  "watching",                                              "Watching",
+  "listening",                                             "Listening",
+  "speaking",                                              "Speaking",
+  "walking",                                               "Walking",
+  "moving_around_using_equipment", "Moving around using equipment (e.g. wheelchair, etc.)",
+  "lifting_and_carrying_objects",                          "Lifting and carrying objects",
+  "calculating",                                           "Calculating",
+  "undertaking_a_task",                                    "Undertaking a task"
+)
+
 df_tool_support <- df_survey %>% 
   select(type, qn_name = name, label) %>% 
-  filter(str_detect(string = type, pattern = "integer|date|select_one|select_multiple"))
+  filter(str_detect(string = type, pattern = "integer|date|select_one|select_multiple")) %>% 
+  select(qn_name, label) %>% 
+  bind_rows(df_added_composite_qns)
 
 # added categories
 df_added_categories <- tibble::tribble(
@@ -37,7 +53,49 @@ df_added_categories <- tibble::tribble(
   "type_of_work_done",    "25 - Tailoring",
   "type_of_work_done",    "26 - Butcher",
   "type_of_work_done",    "27 - Security Guard",
-  "type_of_work_done",    "28 - Fishing"
+  "type_of_work_done",    "28 - Fishing",
+  "i.respondent_gender",    "1 - Male",
+  "i.respondent_gender",    "2 - Female",
+  "watching",                                                  "1 -  No difficulty",
+  "watching",           "2 -  Mild difficulty (presents less than 25% of the time)",
+  "watching", "3 -  Moderate difficulty (presents between 25% and 50% of the time)",
+  "watching",   "4 -  Severe difficulty (presents between 50% and 95% of the time)",
+  "watching",       "5 -  Complete difficulty (presents more than 95% of the time)",
+  "listening",                                                  "1 -  No difficulty",
+  "listening",           "2 -  Mild difficulty (presents less than 25% of the time)",
+  "listening", "3 -  Moderate difficulty (presents between 25% and 50% of the time)",
+  "listening",   "4 -  Severe difficulty (presents between 50% and 95% of the time)",
+  "listening",       "5 -  Complete difficulty (presents more than 95% of the time)",
+  "speaking",                                                  "1 -  No difficulty",
+  "speaking",           "2 -  Mild difficulty (presents less than 25% of the time)",
+  "speaking", "3 -  Moderate difficulty (presents between 25% and 50% of the time)",
+  "speaking",   "4 -  Severe difficulty (presents between 50% and 95% of the time)",
+  "speaking",       "5 -  Complete difficulty (presents more than 95% of the time)",
+  "walking",                                                  "1 -  No difficulty",
+  "walking",           "2 -  Mild difficulty (presents less than 25% of the time)",
+  "walking", "3 -  Moderate difficulty (presents between 25% and 50% of the time)",
+  "walking",   "4 -  Severe difficulty (presents between 50% and 95% of the time)",
+  "walking",       "5 -  Complete difficulty (presents more than 95% of the time)",
+  "moving_around_using_equipment",                                                  "1 -  No difficulty",
+  "moving_around_using_equipment",           "2 -  Mild difficulty (presents less than 25% of the time)",
+  "moving_around_using_equipment", "3 -  Moderate difficulty (presents between 25% and 50% of the time)",
+  "moving_around_using_equipment",   "4 -  Severe difficulty (presents between 50% and 95% of the time)",
+  "moving_around_using_equipment",       "5 -  Complete difficulty (presents more than 95% of the time)",
+  "lifting_and_carrying_objects",                                                  "1 -  No difficulty",
+  "lifting_and_carrying_objects",           "2 -  Mild difficulty (presents less than 25% of the time)",
+  "lifting_and_carrying_objects", "3 -  Moderate difficulty (presents between 25% and 50% of the time)",
+  "lifting_and_carrying_objects",   "4 -  Severe difficulty (presents between 50% and 95% of the time)",
+  "lifting_and_carrying_objects",       "5 -  Complete difficulty (presents more than 95% of the time)",
+  "calculating",                                                  "1 -  No difficulty",
+  "calculating",           "2 -  Mild difficulty (presents less than 25% of the time)",
+  "calculating", "3 -  Moderate difficulty (presents between 25% and 50% of the time)",
+  "calculating",   "4 -  Severe difficulty (presents between 50% and 95% of the time)",
+  "calculating",       "5 -  Complete difficulty (presents more than 95% of the time)",
+  "undertaking_a_task",                                                  "1 -  No difficulty",
+  "undertaking_a_task",           "2 -  Mild difficulty (presents less than 25% of the time)",
+  "undertaking_a_task", "3 -  Moderate difficulty (presents between 25% and 50% of the time)",
+  "undertaking_a_task",   "4 -  Severe difficulty (presents between 50% and 95% of the time)",
+  "undertaking_a_task",       "5 -  Complete difficulty (presents more than 95% of the time)"
 )
 
 df_added_cats_extract <- df_added_categories %>% 
