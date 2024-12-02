@@ -253,7 +253,7 @@ df_added_categories <- tibble::tribble(
   "hold_following_namibian_ids",                              "OD1.1.2a You hold the following identity documents:",                   "6 - Driving license",
   "how_far_do_customers_travel",       "OW1.5c How far do most of your customers travel to reach your enterprises?", "4 - Within and outside the settlement",
   "highest_educ_level",                                          "DP1.4 Highest level at school completed",                          "11 - Diploma",
-  "type_of_work_done",                                                     "DP1.7 Type of main work done",                        "23 - Bartender",
+  "type_of_work_done",                                                     "DP1.7 Type of main work done",                        "24 - Bartender",
   "type_of_work_done",                                                     "DP1.7 Type of main work done",                        "25 - Tailoring",
   "type_of_work_done",                                                     "DP1.7 Type of main work done",                          "26 - Butcher",
   "type_of_work_done",                                                     "DP1.7 Type of main work done",                   "27 - Security Guard",
