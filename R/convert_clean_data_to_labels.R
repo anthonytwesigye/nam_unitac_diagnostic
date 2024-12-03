@@ -33,3 +33,18 @@ df_choices_support <- df_choices %>%
   left_join(df_tool_select_type) %>%
   unite("survey_choice_id", qn_name, choice_name, sep = "_", remove = FALSE) %>%
   select(survey_choice_id, choice_label)
+
+# handle select one -------------------------------------------------------
+
+valid_data_cols <- df_main_clean_data %>% 
+  janitor::remove_empty(which = "cols") %>% 
+  colnames()
+# select one cols
+select_one_cols <- df_tool_select_type %>%
+  filter(select_type %in% c("select_one"), qn_name %in% valid_data_cols)
+
+df_main_clean_data_with_so_labels <- df_main_clean_data %>%
+  # mutate(across(.cols = any_of(select_one_cols$qn_name), .fns = ~paste0(cur_column(), "_", .))) %>%
+  mutate(across(.cols = any_of(select_one_cols$qn_name), .fns = ~ ifelse(!(is.na(.x)| .x %in% c("NA", "")), paste0(cur_column(), "_", .),.x))) %>%
+  mutate(across(.cols = any_of(select_one_cols$qn_name), .fns = ~recode(.x, !!!setNames(df_choices_support$choice_label, df_choices_support$survey_choice_id))))
+
