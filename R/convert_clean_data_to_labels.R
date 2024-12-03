@@ -48,7 +48,8 @@ df_main_clean_data_with_so_labels <- df_main_clean_data %>%
   mutate(across(.cols = any_of(select_one_cols$qn_name), .fns = ~recode(.x, !!!setNames(df_choices_support$choice_label, df_choices_support$survey_choice_id))))
 
 
-# select multiple cols ----------------------------------------------------
+
+# select multiple data update ---------------------------------------------
 
 select_multiple_cols <- df_tool_select_type %>%
   filter(select_type %in% c("select_multiple"), qn_name %in% valid_data_cols)
@@ -91,3 +92,8 @@ for (sm_col in sm_extract) {
 # 
 # df_labels <- df_data_for_update %>% 
 #   select(any_of(sm_extract))
+
+
+# select multiple col names -----------------------------------------------
+
+
