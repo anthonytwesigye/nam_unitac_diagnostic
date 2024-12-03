@@ -49,7 +49,7 @@ df_added_categories <- tibble::tribble(
   "hold_following_namibian_ids",                     "6 - Driving license",
   "how_far_do_customers_travel",  "4 - Within and outside the settlement",
   "highest_educ_level",    "11 - Diploma",
-  "type_of_work_done",    "23 - Bartender",
+  "type_of_work_done",    "24 - Bartender",
   "type_of_work_done",    "25 - Tailoring",
   "type_of_work_done",    "26 - Butcher",
   "type_of_work_done",    "27 - Security Guard",
