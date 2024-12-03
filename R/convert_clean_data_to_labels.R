@@ -18,4 +18,18 @@ df_clean_loop_r_roster <- readxl::read_excel(clean_loc_data, col_types = clean_c
 # tool
 loc_tool <- "inputs/Diagnostic_of_informality_Tool.xlsx"
 df_survey <- readxl::read_excel(loc_tool, sheet = "survey")
-df_choices <- readxl::read_excel(loc_tool, sheet = "choices")
+df_choices <- readxl::read_excel(loc_tool, sheet = "choices") %>% 
+  select(list_name, choice_name = name,   choice_label = label) %>%
+  filter(!is.na(list_name))
+
+# extract select types
+df_tool_select_type <- df_survey %>%
+  select(type, qn_name = name, label) %>%
+  filter(str_detect(string = type, pattern = "integer|date|select_one|select_multiple")) %>%
+  separate(col = type, into = c("select_type", "list_name"), sep =" ", remove = TRUE, extra = "drop" )
+
+# extract choice ids and labels
+df_choices_support <- df_choices %>%
+  left_join(df_tool_select_type) %>%
+  unite("survey_choice_id", qn_name, choice_name, sep = "_", remove = FALSE) %>%
+  select(survey_choice_id, choice_label)
