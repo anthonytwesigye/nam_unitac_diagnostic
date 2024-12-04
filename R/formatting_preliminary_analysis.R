@@ -148,6 +148,7 @@ reordered_columns <- df_cols_for_ordering %>%
 
 # reorder
 extra_cols_for_analysis_tables <- c("Indicator")
+
 df_analysis_wide_reodered <- df_analysis_wide %>%
   # relocate(any_of(extra_cols_for_analysis_tables), .before = "analysis_var") %>% 
   relocate("analysis_var_value_label", .after = "analysis_var_value") %>% 
@@ -155,7 +156,7 @@ df_analysis_wide_reodered <- df_analysis_wide %>%
   relocate(analysis_type, .after = "analysis_var_value_label")
 
 
-cols_for_num_pct_formatting <- df_analysis_wide %>% 
+cols_for_num_pct_formatting <- df_analysis_wide_reodered %>% 
   select(stat_total:row_id, - any_of(c("Indicator", "dataset"))) %>% 
   select(!matches("^n_"), -row_id) %>% 
   colnames()
@@ -182,7 +183,7 @@ df_extracted_header <- bind_rows(df_extracted_header_data) %>%
 wb <- createWorkbook()
 
 hs1 <- createStyle(fgFill = "#049dd9", halign = "CENTER", textDecoration = "", fontColour = "white", fontSize = 12, wrapText = T, 
-                   border = "TopBottomLeftRight", borderStyle = "medium", borderColour = "#000000")
+                   border = "TopBottomLeftRight", borderStyle = "thin", borderColour = "#000000")
 hs2 <- createStyle(fgFill = "grey", halign = "LEFT", textDecoration = "Bold", fontColour = "white", wrapText = F)
 hs2_no_bold <- createStyle(fgFill = "grey", halign = "LEFT", textDecoration = "", fontColour = "white", wrapText = F)
 hs2_relevant <- createStyle(fgFill = "grey", halign = "LEFT", textDecoration = "", fontColour = "#808080", wrapText = F)
@@ -211,7 +212,7 @@ setColWidths(wb = wb, sheet = "Diagnostic", cols = 2, widths = 26)
 setColWidths(wb = wb, sheet = "Diagnostic", cols = 3:65, widths = 10)
 
 # split variables to be written in different tables with in a sheet
-sheet_variables_data <- split(df_analysis_wide, factor(df_analysis_wide$analysis_var, levels = unique(df_analysis_wide$analysis_var)))
+sheet_variables_data <- split(df_analysis_wide_reodered, factor(df_analysis_wide_reodered$analysis_var, levels = unique(df_analysis_wide_reodered$analysis_var)))
 
 previous_row_end <- 1
 
@@ -223,6 +224,8 @@ for (i in 1:length(sheet_variables_data)) {
   get_question_label <- current_variable_data %>% select(Indicator) %>% unique() %>% pull()
   get_qn_type <- current_variable_data %>% select(analysis_type) %>% unique() %>% pull()
   get_dataset_type <- current_variable_data %>% select(dataset) %>% unique() %>% pull()
+  
+  print(paste0("analysis type: ", get_qn_type))
   
   if(get_qn_type %in% c("prop_select_one", "prop_select_multiple")){
     for(n in cols_for_num_pct_formatting){class(current_variable_data[[n]])= "percentage"}
@@ -239,12 +242,12 @@ for (i in 1:length(sheet_variables_data)) {
   writeData(wb, sheet = "Diagnostic", get_question_label, startCol = 1, startRow = previous_row_end + 1)
   writeData(wb, sheet = "Diagnostic", get_qn_type, startCol = 2, startRow = previous_row_end + 1)
   writeData(wb, sheet = "Diagnostic", get_dataset_type, startCol = 65, startRow = previous_row_end + 1)
-  addStyle(wb, sheet = "Diagnostic", hs2, rows = previous_row_end + 1, cols = 1:5, gridExpand = TRUE)
+  addStyle(wb, sheet = "Diagnostic", hs2, rows = previous_row_end + 1, cols = 1:65, gridExpand = TRUE)
   
   # current_data_length <- max(current_variable_data$row_id) - min(current_variable_data$row_id)
   current_data_length <- nrow(current_variable_data)
   
-  print(paste0("start row: ", current_row_start, ", previous end: ", previous_row_end, ", data length: ", current_data_length, ", variable: ", get_question))
+  # print(paste0("start row: ", current_row_start, ", previous end: ", previous_row_end, ", data length: ", current_data_length, ", variable: ", get_question))
   
   writeData(wb = wb, 
             sheet = "Diagnostic", 
