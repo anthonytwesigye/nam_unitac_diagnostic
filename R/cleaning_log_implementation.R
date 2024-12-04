@@ -8,8 +8,8 @@ library(openxlsx)
 loc_data <- "inputs/Diagnostic_of_informality_Data.xlsx"
 
 # main data
-data_nms <- names(readxl::read_excel(path = loc_data, n_max = 300))
-c_types <- ifelse(str_detect(string = data_nms, pattern = "_other$"), "text", "guess")
+data_nms <- names(readxl::read_excel(path = loc_data, n_max = 2000))
+c_types <- ifelse(str_detect(string = data_nms, pattern = "_other$|\\/"), "text", "guess")
 df_tool_data <- readxl::read_excel(loc_data, col_types = c_types) %>% 
   mutate(point_number = paste0("pt_", row_number()),
          location = case_when(interview_loc_level %in% c("municipality") ~ municipality,
@@ -19,8 +19,8 @@ df_tool_data <- readxl::read_excel(loc_data, col_types = c_types) %>%
 
 # loops
 # roster
-data_nms_r_roster <- names(readxl::read_excel(path = loc_data, n_max = 300, sheet = "hh_roster"))
-c_types_r_roster <- ifelse(str_detect(string = data_nms_r_roster, pattern = "_other$"), "text", "guess")
+data_nms_r_roster <- names(readxl::read_excel(path = loc_data, n_max = 2000, sheet = "hh_roster"))
+c_types_r_roster <- ifelse(str_detect(string = data_nms_r_roster, pattern = "_other$|\\/"), "text", "guess")
 df_loop_r_roster <- readxl::read_excel(loc_data, col_types = c_types_r_roster, sheet = "hh_roster")
 
 # tool
@@ -350,3 +350,60 @@ openXL(file = paste0("outputs/", butteR::date_file_prefix(),"_diagnostic_of_info
 
 saveWorkbook(wb_cleaned_data, paste0("support_files/diagnostic_of_informality_data.xlsx"), overwrite = TRUE)
 
+
+
+# data with location ------------------------------------------------------
+
+wb_cleaned_data_with_loc <- createWorkbook()
+
+## cleaned_data with location
+addWorksheet(wb_cleaned_data_with_loc, sheetName="cleaned_data_loc")
+setColWidths(wb = wb_cleaned_data_with_loc, sheet = "cleaned_data_loc", cols = 1:ncol(df_out_clean_data_with_loc), widths = 24.89)
+writeDataTable(wb = wb_cleaned_data_with_loc, sheet = "cleaned_data_loc", 
+               x = df_out_clean_data_with_loc , 
+               startRow = 1, startCol = 1, 
+               tableStyle = "TableStyleLight9",
+               headerStyle = hs1)
+# freeze pane
+freezePane(wb = wb_cleaned_data_with_loc, "cleaned_data_loc", firstActiveRow = 2, firstActiveCol = 2)
+
+## cleaned_roster 
+addWorksheet(wb_cleaned_data_with_loc, sheetName="cleaned_roster")
+setColWidths(wb = wb_cleaned_data_with_loc, sheet = "cleaned_roster", cols = 1:ncol(df_out_clean_roster), widths = 24.89)
+writeDataTable(wb = wb_cleaned_data_with_loc, sheet = "cleaned_roster", 
+               x = df_out_clean_roster , 
+               startRow = 1, startCol = 1, 
+               tableStyle = "TableStyleLight9",
+               headerStyle = hs1)
+# freeze pane
+freezePane(wb = wb_cleaned_data_with_loc, "cleaned_roster", firstActiveRow = 2, firstActiveCol = 2)
+
+## cleaned_poi 
+addWorksheet(wb_cleaned_data_with_loc, sheetName="cleaned_poi")
+setColWidths(wb = wb_cleaned_data_with_loc, sheet = "cleaned_poi", cols = 1:ncol(df_cleaning_step_poi), widths = 24.89)
+writeDataTable(wb = wb_cleaned_data_with_loc, sheet = "cleaned_poi", 
+               x = df_cleaning_step_poi , 
+               startRow = 1, startCol = 1, 
+               tableStyle = "TableStyleLight9",
+               headerStyle = hs1)
+# freeze pane
+freezePane(wb = wb_cleaned_data_with_loc, "cleaned_poi", firstActiveRow = 2, firstActiveCol = 2)
+
+## newcategories
+addWorksheet(wb_cleaned_data_with_loc, sheetName="newcategories")
+setColWidths(wb = wb_cleaned_data_with_loc, sheet = "newcategories", cols = 1:ncol(df_added_categories), widths = 24.89)
+writeDataTable(wb = wb_cleaned_data_with_loc, sheet = "newcategories", 
+               x = df_added_categories , 
+               startRow = 1, startCol = 1, 
+               tableStyle = "TableStyleLight9",
+               headerStyle = hs1)
+# freeze pane
+freezePane(wb = wb_cleaned_data_with_loc, "newcategories", firstActiveRow = 2, firstActiveCol = 2)
+
+# active sheet
+
+activeSheet(wb = wb_cleaned_data_with_loc) <- "cleaned_data_loc"
+
+
+saveWorkbook(wb_cleaned_data_with_loc, paste0("outputs/", butteR::date_file_prefix(),"_diagnostic_of_informality_data_loc.xlsx"), overwrite = TRUE)
+openXL(file = paste0("outputs/", butteR::date_file_prefix(),"_diagnostic_of_informality_data_loc.xlsx"))
