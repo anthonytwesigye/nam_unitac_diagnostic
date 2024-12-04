@@ -23,16 +23,69 @@ df_choices <- readxl::read_excel(loc_tool, sheet = "choices") %>%
   filter(!is.na(list_name))
 
 # extract select types
-df_tool_select_type <- df_survey %>%
+changed_to_so_cols <- c("watching",
+                       "listening",
+                       "speaking",
+                       "walking",
+                       "moving_around_using_equipment",
+                       "lifting_and_carrying_objects",
+                       "calculating",
+                       "undertaking_a_task")
+so_composite_cols <- c("i.respondent_gender")
+
+df_tool_select_type_init <- df_survey %>%
   select(type, qn_name = name, label) %>%
   filter(str_detect(string = type, pattern = "integer|decimal|date|select_one|select_multiple")) %>%
   separate(col = type, into = c("select_type", "list_name"), sep =" ", remove = TRUE, extra = "drop" )
 
+df_tool_select_type_added <- tibble::tribble(
+  ~select_type, ~list_name, ~qn_name,                ~label,
+  "integer", NA_character_, "i.respondent_age",   "Respondent age",
+  "select_one", "gender_list", "i.respondent_gender", "Respondent gender",
+  "select_one", "activity_limits_list", "watching",   "Watching",
+  "select_one", "activity_limits_list", "listening",  "Listening",
+  "select_one", "activity_limits_list", "speaking",   "Speaking",
+  "select_one", "activity_limits_list", "walking",    "Walking",
+  "select_one", "activity_limits_list", "moving_around_using_equipment", "Moving around using equipment (e.g. wheelchair, etc.)",
+  "select_one", "activity_limits_list", "lifting_and_carrying_objects",   "Lifting and carrying objects",
+  "select_one", "activity_limits_list", "calculating",                    "Calculating",
+  "select_one", "activity_limits_list", "undertaking_a_task",             "Undertaking a task"
+)
+df_tool_select_type <- bind_rows(df_tool_select_type_init, df_tool_select_type_added)
+  
 # extract choice ids and labels
+
+# added categories
+df_added_categories <- tibble::tribble(
+  ~parent_qn,                                   ~new_category,
+  "barriers_adopting_digital_tools",   "6 - No barrier",
+  "wc_work_location",            "7 - Home of employer",
+  "reasons_not_using_bank",      "8 - Employer pays cash",
+  "ow_exposure_mitigation",      "4 - Reporting to authorities",
+  "hold_following_namibian_ids",                       "5 - Passport",
+  "hold_following_namibian_ids",                     "6 - Driving license",
+  "how_far_do_customers_travel",  "4 - Within and outside the settlement",
+  "highest_educ_level",    "11 - Diploma",
+  "type_of_work_done",    "24 - Bartender",
+  "type_of_work_done",    "25 - Tailoring",
+  "type_of_work_done",    "26 - Butcher",
+  "type_of_work_done",    "27 - Security Guard",
+  "type_of_work_done",    "28 - Fishing"
+)
+
+df_choices_added <- df_added_categories %>% 
+  mutate(choice_name = str_extract(string = new_category, pattern = "^[0-9]{1,2}"),
+         choice_label = str_replace(string = new_category, pattern = "^[0-9]{1,2}\\s\\-\\s", ""),
+         qn_name = parent_qn) %>% 
+  left_join(df_tool_select_type) %>% 
+  select(list_name, choice_name, choice_label)
+
 df_choices_support <- df_choices %>%
+  bind_rows(df_choices_added) %>% 
   left_join(df_tool_select_type) %>%
   unite("survey_choice_id", qn_name, choice_name, sep = "_", remove = FALSE) %>%
-  select(list_name, survey_choice_id, choice_name, choice_label)
+  select(select_type, list_name, survey_choice_id, choice_name, choice_label, qn_name, label)
+
 
 # handle select one -------------------------------------------------------
 
@@ -89,28 +142,12 @@ df_main_clean_data_with_so_sm_labels <- df_data_for_update
 
 # format the headers ------------------------------------------------------
 
-df_added_composite_qns <- tibble::tribble(
-  ~list_name, ~qn_name,                ~label,
-  "gender_list", "i.respondent_age",   "Respondent age",
-  "gender_list", "i.respondent_gender", "Respondent gender",
-  "activity_limits_list", "watching",   "Watching",
-  "activity_limits_list", "listening",  "Listening",
-  "activity_limits_list", "speaking",   "Speaking",
-  "activity_limits_list", "walking",    "Walking",
-  "activity_limits_list", "moving_around_using_equipment", "Moving around using equipment (e.g. wheelchair, etc.)",
-  "activity_limits_list", "lifting_and_carrying_objects",   "Lifting and carrying objects",
-  "activity_limits_list", "calculating",                    "Calculating",
-  "activity_limits_list", "undertaking_a_task",             "Undertaking a task"
-)
-
 # general columns
 select_general_cols <- df_tool_select_type %>%
   filter(select_type %in% c("select_one", "integer", "decimal", "text", "date", "dateTime", "datetime"))
 
 # select multiple cols
-df_sm_choices_support <- df_choices %>%
-  left_join(df_tool_select_type) %>%
-  unite("survey_choice_id", qn_name, choice_name, sep = "_", remove = FALSE) %>%
+df_sm_choices_support <- df_choices_support %>%
   filter(select_type %in% c("select_multiple"))
 
 # individual choices handling
