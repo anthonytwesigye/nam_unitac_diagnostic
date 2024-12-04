@@ -23,8 +23,7 @@ df_survey <- readxl::read_excel(loc_tool, sheet = "survey")
 df_choices <- readxl::read_excel(loc_tool, sheet = "choices")
 
 # loa // list of analysis
-all_loa <- read_csv("inputs/r_loa_nam_diagnostic.csv") %>% 
-  filter(is.na(group_var))
+all_loa <- read_csv("inputs/r_loa_nam_diagnostic.csv")
 
 
 # data with composites ----------------------------------------------------
