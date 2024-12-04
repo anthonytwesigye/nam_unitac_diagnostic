@@ -177,4 +177,33 @@ df_extracted_header_data <- tibble("old_cols" = df_to_extract_header) %>%
   select(-old_cols) %>%
   pivot_wider(names_from = new_cols, values_from = labels)
 
+# create workbook ---------------------------------------------------------
+# workbook
+wb_data_with_labs <- createWorkbook()
+
+hs1 <- createStyle(fgFill = "#7B7B7B", textDecoration = "Bold", fontName = "Arial Narrow", fontColour = "white", fontSize = 12, wrapText = F)
+
+modifyBaseFont(wb = wb_data_with_labs, fontSize = 11, fontName = "Arial Narrow")
+
+# clean_main_data_labels
+addWorksheet(wb_data_with_labs, sheetName="clean_main_data_labels")
+setColWidths(wb = wb_data_with_labs, sheet = "clean_main_data_labels", cols = 1:ncol(df_main_clean_data_with_so_sm_labels), widths = 24.89)
+
+# header
+writeData(wb = wb_data_with_labs, sheet = "clean_main_data_labels", df_extracted_header_data %>% head(1), startCol = 1,
+          startRow = 1, headerStyle = hs1, colNames = FALSE)
+addStyle(wb = wb_data_with_labs, sheet = "clean_main_data_labels", hs1, rows = 1, cols = 1:ncol(df_main_clean_data_with_so_sm_labels), gridExpand = TRUE)
+
+# data
+writeData(wb = wb_data_with_labs, sheet = "clean_main_data_labels",
+          x = df_main_clean_data_with_so_sm_labels ,
+          startRow = 2, startCol = 1,
+          colNames = FALSE,
+          withFilter = FALSE)
+
+# openXL(wb_data_with_labs)
+saveWorkbook(wb_data_with_labs, paste0("outputs/", butteR::date_file_prefix(),"_diagnostic_of_informality_data_with_labels.xlsx"), overwrite = TRUE)
+openXL(file = paste0("outputs/", butteR::date_file_prefix(),"_diagnostic_of_informality_data_with_labels.xlsx"))
+
+
 
