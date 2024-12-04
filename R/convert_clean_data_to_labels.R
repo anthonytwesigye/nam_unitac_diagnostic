@@ -90,17 +90,17 @@ df_main_clean_data_with_so_sm_labels <- df_data_for_update
 # format the headers ------------------------------------------------------
 
 df_added_composite_qns <- tibble::tribble(
-  ~qn_name,                ~label,
-  "i.respondent_age",   "Respondent age",
-  "i.respondent_gender", "Respondent gender",
-  "watching",                                              "Watching",
-  "listening",                                             "Listening",
-  "speaking",                                              "Speaking",
-  "walking",                                               "Walking",
-  "moving_around_using_equipment", "Moving around using equipment (e.g. wheelchair, etc.)",
-  "lifting_and_carrying_objects",                          "Lifting and carrying objects",
-  "calculating",                                           "Calculating",
-  "undertaking_a_task",                                    "Undertaking a task"
+  ~list_name, ~qn_name,                ~label,
+  "gender_list", "i.respondent_age",   "Respondent age",
+  "gender_list", "i.respondent_gender", "Respondent gender",
+  "activity_limits_list", "watching",   "Watching",
+  "activity_limits_list", "listening",  "Listening",
+  "activity_limits_list", "speaking",   "Speaking",
+  "activity_limits_list", "walking",    "Walking",
+  "activity_limits_list", "moving_around_using_equipment", "Moving around using equipment (e.g. wheelchair, etc.)",
+  "activity_limits_list", "lifting_and_carrying_objects",   "Lifting and carrying objects",
+  "activity_limits_list", "calculating",                    "Calculating",
+  "activity_limits_list", "undertaking_a_task",             "Undertaking a task"
 )
 
 # general columns
