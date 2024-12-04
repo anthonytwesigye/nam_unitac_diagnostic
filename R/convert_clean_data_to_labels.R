@@ -24,15 +24,6 @@ df_choices <- readxl::read_excel(loc_tool, sheet = "choices") %>%
   filter(!is.na(list_name))
 
 # extract select types
-changed_to_so_cols <- c("watching",
-                       "listening",
-                       "speaking",
-                       "walking",
-                       "moving_around_using_equipment",
-                       "lifting_and_carrying_objects",
-                       "calculating",
-                       "undertaking_a_task")
-so_composite_cols <- c("i.respondent_gender")
 
 df_tool_select_type_init <- df_survey %>%
   select(type, qn_name = name, label) %>%
