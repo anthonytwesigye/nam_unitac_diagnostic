@@ -1,5 +1,6 @@
 library(tidyverse)
 library(supporteR)
+library(openxlsx)
 
 # clean data
 clean_loc_data <- "inputs/diagnostic_of_informality_cleaned_data.xlsx"
