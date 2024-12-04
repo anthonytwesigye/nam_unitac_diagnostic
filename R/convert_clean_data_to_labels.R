@@ -25,7 +25,7 @@ df_choices <- readxl::read_excel(loc_tool, sheet = "choices") %>%
 # extract select types
 df_tool_select_type <- df_survey %>%
   select(type, qn_name = name, label) %>%
-  filter(str_detect(string = type, pattern = "integer|date|select_one|select_multiple")) %>%
+  filter(str_detect(string = type, pattern = "integer|decimal|date|select_one|select_multiple")) %>%
   separate(col = type, into = c("select_type", "list_name"), sep =" ", remove = TRUE, extra = "drop" )
 
 # extract choice ids and labels
@@ -85,15 +85,59 @@ for (sm_col in sm_extract) {
   
 }
 
+df_main_clean_data_with_so_sm_labels <- df_data_for_update
 
-# check
-# df_main_clean_data_with_so_labels %>% 
-#   select(any_of(sm_extract)) 
-# 
-# df_labels <- df_data_for_update %>% 
-#   select(any_of(sm_extract))
+# format the headers ------------------------------------------------------
 
+df_added_composite_qns <- tibble::tribble(
+  ~qn_name,                ~label,
+  "i.respondent_age",   "Respondent age",
+  "i.respondent_gender", "Respondent gender",
+  "watching",                                              "Watching",
+  "listening",                                             "Listening",
+  "speaking",                                              "Speaking",
+  "walking",                                               "Walking",
+  "moving_around_using_equipment", "Moving around using equipment (e.g. wheelchair, etc.)",
+  "lifting_and_carrying_objects",                          "Lifting and carrying objects",
+  "calculating",                                           "Calculating",
+  "undertaking_a_task",                                    "Undertaking a task"
+)
 
-# select multiple col names -----------------------------------------------
+# general columns
+select_general_cols <- df_tool_select_type %>%
+  filter(select_type %in% c("select_one", "integer", "decimal", "text", "date", "dateTime", "datetime"))
+
+# select multiple cols
+df_sm_choices_support <- df_choices %>%
+  left_join(df_tool_select_type) %>%
+  unite("survey_choice_id", qn_name, choice_name, sep = "_", remove = FALSE) %>%
+  filter(select_type %in% c("select_multiple"))
+
+# individual choices handling
+df_sm_choices_support_individual <- df_sm_choices_support %>%
+  mutate(qn_name = paste0(qn_name, "/", choice_name),
+         label = paste0(label, "/", choice_label))
+
+# parent question handling
+df_sm_choices_support_parent <- df_sm_choices_support %>%
+  group_by(list_name) %>%
+  filter(row_number() == 1) %>%
+  mutate(survey_choice_id = NA_character_,
+         choice_name = NA_character_)
+
+df_sm_choices_support_combined <- bind_rows(df_sm_choices_support_parent, df_sm_choices_support_individual)
+
+# extract header data
+
+df_to_extract_header = df_main_clean_data_with_so_sm_labels %>%
+  colnames()
+
+df_extracted_header_data <- tibble("old_cols" = df_to_extract_header) %>%
+  mutate(new_cols = paste0("x", row_number()),
+         labels = ifelse(old_cols %in% select_general_cols$qn_name, recode(old_cols, !!!setNames(select_general_cols$label, select_general_cols$qn_name)), old_cols),
+         labels = ifelse(old_cols %in% df_sm_choices_support_combined$qn_name, recode(old_cols, !!!setNames(df_sm_choices_support_combined$label, df_sm_choices_support_combined$qn_name)), labels),
+  ) %>%
+  select(-old_cols) %>%
+  pivot_wider(names_from = new_cols, values_from = labels)
 
 
