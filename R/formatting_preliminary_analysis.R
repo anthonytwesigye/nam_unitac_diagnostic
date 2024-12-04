@@ -118,8 +118,8 @@ df_choices_support <- df_choices %>%
 # read analysis
 
 df_unformatted_analysis <- read_csv("outputs/non_formatted_analysis_nam_diagnostic.csv") %>% 
-    mutate(#group_var = str_replace_all(string = group_var, pattern = "%/%",replacement = "x"),
-    #group_var_value = str_replace_all(string = group_var_value, pattern = "%/%",replacement = "x"),
+    mutate(# group_var = str_replace_all(string = group_var, pattern = "%/%",replacement = "x"),
+    # group_var_value = str_replace_all(string = group_var_value, pattern = "%/%",replacement = "x"),
     # int.analysis_var = ifelse(str_detect(string = analysis_var, pattern = "^i\\."), str_replace(string = analysis_var, pattern = "^i\\.", replacement = ""), analysis_var),
     int.analysis_var = analysis_var,
     analysis_choice_id = paste0(int.analysis_var, "_", analysis_var_value),
