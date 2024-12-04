@@ -224,7 +224,7 @@ df_out_clean_data_with_loc <-  df_updating_sm_parents$updated_sm_parents%>%
 
 df_out_clean_roster <- df_updating_sm_parents_roster$updated_sm_parents %>% 
   filter(!`_submission__uuid` %in% df_remove_survey_cl$uuid) %>% 
-  select(-any_of("cleaning_uuid", "point_number"))
+  select(-any_of(c("cleaning_uuid", "point_number")))
 
 
 # list_of_datasets <- list("raw_data" = df_out_raw_data,
@@ -353,10 +353,10 @@ freezePane(wb = wb_cleaned_data, "newcategories", firstActiveRow = 2, firstActiv
 activeSheet(wb = wb_cleaned_data) <- "cleaned_data"
 
 
-saveWorkbook(wb_cleaned_data, paste0("outputs/", butteR::date_file_prefix(),"_diagnostic_of_informality_data.xlsx"), overwrite = TRUE)
-openXL(file = paste0("outputs/", butteR::date_file_prefix(),"_diagnostic_of_informality_data.xlsx"))
+saveWorkbook(wb_cleaned_data, paste0("outputs/", butteR::date_file_prefix(),"_diagnostic_of_informality_cleaned_data.xlsx"), overwrite = TRUE)
+openXL(file = paste0("outputs/", butteR::date_file_prefix(),"_diagnostic_of_informality_cleaned_data.xlsx"))
 
-saveWorkbook(wb_cleaned_data, paste0("support_files/diagnostic_of_informality_data.xlsx"), overwrite = TRUE)
+saveWorkbook(wb_cleaned_data, paste0("support_files/diagnostic_of_informality_cleaned_data.xlsx"), overwrite = TRUE)
 
 
 
