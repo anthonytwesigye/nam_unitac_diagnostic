@@ -50,7 +50,10 @@ cols_to_remove <- c("deviceid", "audit", "audit_URL",
                     "latitude", "longitude", "geopoint",
                     "instance_name", "_geopoint_latitude", "_geopoint_longitude",
                     "_geopoint_altitude", "_geopoint_precision",
-                    "point_number", "location")
+                    "point_number")
+cols_to_remove_exclude_loc <- c("deviceid", "audit", "audit_URL", 
+                    "latitude", "longitude",
+                    "instance_name", "point_number")
 
 # Main dataset ------------------------------------------------------------
 
@@ -214,6 +217,11 @@ df_out_raw_data <- df_tool_data %>% select(-any_of(cols_to_remove))
 df_out_clean_data <- df_updating_sm_parents$updated_sm_parents%>% 
   select(-any_of(cols_to_remove)) %>% 
   filter(!`_uuid` %in% df_remove_survey_cl$uuid)
+
+df_out_clean_data_with_loc <-  df_updating_sm_parents$updated_sm_parents%>% 
+  select(-any_of(cols_to_remove_exclude_loc)) %>% 
+  filter(!`_uuid` %in% df_remove_survey_cl$uuid)
+
 df_out_clean_roster <- df_updating_sm_parents_roster$updated_sm_parents %>% 
   filter(!`_submission__uuid` %in% df_remove_survey_cl$uuid) %>% 
   select(-cleaning_uuid)
