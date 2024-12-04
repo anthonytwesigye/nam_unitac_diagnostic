@@ -34,7 +34,8 @@ df_data_with_composites <- df_main_clean_data %>%
          i.respondent_gender = ifelse(is.na(next_resp_gender), init_resp_gender, next_resp_gender))
 
 # roster
-df_clean_loop_r_roster_with_composites <- df_clean_loop_r_roster
+df_clean_loop_r_roster_with_composites <- df_clean_loop_r_roster %>% 
+  mutate(interview_loc_level = recode(`_submission__uuid`, !!!setNames(df_main_clean_data$interview_loc_level, df_main_clean_data$`_uuid`)))
 
 # analysis - main -------------------------------------------------
 
@@ -93,3 +94,4 @@ df_combined_tables <- bind_rows(df_main_analysis$results_table %>% mutate(datase
 
 write_csv(df_combined_tables, paste0("outputs/", butteR::date_file_prefix(), "_non_formatted_analysis_nam_diagnostic.csv"), na="")
 write_csv(df_combined_tables, paste0("outputs/non_formatted_analysis_nam_diagnostic.csv"), na="")
+
