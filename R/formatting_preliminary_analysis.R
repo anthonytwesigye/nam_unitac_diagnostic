@@ -138,24 +138,38 @@ df_analysis_wide <- df_unformatted_analysis %>%
   mutate(row_id = row_number()) %>% 
   relocate(dataset, .after = "n_total")
 
+# create order for columns (stat and n)
+df_cols_for_ordering <- tibble("result_col" = df_analysis_wide %>% select(starts_with("stat_")) %>% colnames(),
+                               "n_unweighted" = df_analysis_wide %>% select(starts_with("n_")) %>% colnames())
 
+reordered_columns <- df_cols_for_ordering %>%
+  pivot_longer(cols = c(result_col, n_unweighted), names_to = "entries", values_to = "columns") %>%
+  pull(columns)
+
+# reorder
+extra_cols_for_analysis_tables <- c("Indicator")
+df_analysis_wide_reodered <- df_analysis_wide %>%
+  # relocate(any_of(extra_cols_for_analysis_tables), .before = "analysis_var") %>% 
+  relocate("analysis_var_value_label", .after = "analysis_var_value") %>% 
+  relocate(any_of(reordered_columns), .after = "analysis_var_value_label") %>% 
+  relocate(analysis_type, .after = "analysis_var_value_label")
 
 
 cols_for_num_pct_formatting <- df_analysis_wide %>% 
-  select(stat_total:row_id) %>% 
+  select(stat_total:row_id, - any_of(c("Indicator", "dataset"))) %>% 
   select(!matches("^n_"), -row_id) %>% 
   colnames()
 
 # extract header data
 
-df_to_extract_header = df_analysis_wide %>% 
+df_to_extract_header = df_analysis_wide_reodered %>% 
   select(-any_of(c("analysis_var", "analysis_var_value", "analysis_var_value_label",
                    "int.analysis_var", "analysis_choice_id", "Indicator", "row_id"))) %>% 
   colnames()
 
 df_extracted_header_data <- tibble("old_cols" = df_to_extract_header) %>% 
   mutate("new_cols" = paste0("x", row_number())) %>% 
-  mutate(old_cols = str_replace(string = old_cols, pattern = "Results\\(mean\\/percentage\\)_|_community$|_refugee$", replacement = "")) %>%
+  mutate(old_cols = str_replace(string = old_cols, pattern = "stat_", replacement = "")) %>%
   mutate(old_cols = str_replace(string = old_cols, pattern = "^n_.+", replacement = "n")) %>% 
   mutate(old_cols = str_replace(string = old_cols, pattern = "%/%", replacement = "")) %>% 
   pivot_wider(names_from = new_cols, values_from = old_cols)
@@ -167,7 +181,7 @@ df_extracted_header <- bind_rows(df_extracted_header_data) %>%
 
 wb <- createWorkbook()
 
-hs1 <- createStyle(fgFill = "#049dd9", halign = "CENTER", textDecoration = "Bold", fontColour = "white", fontSize = 14, wrapText = T, 
+hs1 <- createStyle(fgFill = "#049dd9", halign = "CENTER", textDecoration = "", fontColour = "white", fontSize = 12, wrapText = T, 
                    border = "TopBottomLeftRight", borderStyle = "medium", borderColour = "#000000")
 hs2 <- createStyle(fgFill = "grey", halign = "LEFT", textDecoration = "Bold", fontColour = "white", wrapText = F)
 hs2_no_bold <- createStyle(fgFill = "grey", halign = "LEFT", textDecoration = "", fontColour = "white", wrapText = F)
@@ -190,11 +204,11 @@ addWorksheet(wb, sheetName="Diagnostic")
 writeData(wb, sheet = "Diagnostic", df_extracted_header %>% head(1), startCol = 2, 
           startRow = 1, headerStyle = hs2, colNames = FALSE, 
           borders = "all", borderColour = "#000000", borderStyle = "thin")
-addStyle(wb, sheet = "Diagnostic", hs1, rows = 1, cols = 1:5, gridExpand = TRUE)
+addStyle(wb, sheet = "Diagnostic", hs1, rows = 1, cols = 1:65, gridExpand = TRUE)
 
 setColWidths(wb = wb, sheet = "Diagnostic", cols = 1, widths = 70)
 setColWidths(wb = wb, sheet = "Diagnostic", cols = 2, widths = 26)
-setColWidths(wb = wb, sheet = "Diagnostic", cols = 3:5, widths = 10)
+setColWidths(wb = wb, sheet = "Diagnostic", cols = 3:65, widths = 10)
 
 # split variables to be written in different tables with in a sheet
 sheet_variables_data <- split(df_analysis_wide, factor(df_analysis_wide$analysis_var, levels = unique(df_analysis_wide$analysis_var)))
@@ -224,7 +238,7 @@ for (i in 1:length(sheet_variables_data)) {
   # add header for variable
   writeData(wb, sheet = "Diagnostic", get_question_label, startCol = 1, startRow = previous_row_end + 1)
   writeData(wb, sheet = "Diagnostic", get_qn_type, startCol = 2, startRow = previous_row_end + 1)
-  writeData(wb, sheet = "Diagnostic", get_dataset_type, startCol = 5, startRow = previous_row_end + 1)
+  writeData(wb, sheet = "Diagnostic", get_dataset_type, startCol = 65, startRow = previous_row_end + 1)
   addStyle(wb, sheet = "Diagnostic", hs2, rows = previous_row_end + 1, cols = 1:5, gridExpand = TRUE)
   
   # current_data_length <- max(current_variable_data$row_id) - min(current_variable_data$row_id)
