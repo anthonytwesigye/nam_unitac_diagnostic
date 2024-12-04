@@ -27,7 +27,7 @@ df_choices <- readxl::read_excel(loc_tool, sheet = "choices") %>%
 
 df_tool_select_type_init <- df_survey %>%
   select(type, qn_name = name, label) %>%
-  filter(str_detect(string = type, pattern = "integer|decimal|date|select_one|select_multiple")) %>%
+  filter(str_detect(string = type, pattern = "integer|decimal|text|date|select_one|select_multiple")) %>%
   separate(col = type, into = c("select_type", "list_name"), sep =" ", remove = TRUE, extra = "drop" )
 
 df_tool_select_type_added <- tibble::tribble(
