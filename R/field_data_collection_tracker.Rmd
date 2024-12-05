@@ -72,8 +72,7 @@ df_data_support_cl_log <- df_tool_data %>%
 
 # cleaning log handling
 df_cl_log <- readxl::read_excel("../inputs/combined_checks_nam_diagnostic.xlsx", sheet = "cleaning_log") %>% 
-  left_join(df_data_support_cl_log, by = "uuid") %>% 
-  filter(!str_detect(string = question, pattern = "\\/$"))
+  left_join(df_data_support_cl_log, by = "uuid")
 
 # change_response logs that affect stats in the data collection progress ref
 cl_log_change_response <- df_cl_log %>%
@@ -84,6 +83,7 @@ cl_log_change_response <- df_cl_log %>%
          !(is.na(new_value)|new_value %in% c("NA")),
          !str_detect(string = question, "\\/")
   ) %>%
+  filter(question %in% c("municipality", "town_council", "village_council", "settlement", "enumerator_id")) %>% 
   select(uuid, question, new_value)
 
 # updated tool data ref
