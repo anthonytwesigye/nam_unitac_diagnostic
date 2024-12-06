@@ -47,13 +47,13 @@ pii_from_data$potential_PII
 
 # then determine wich columns to remove from both the raw and clean data
 cols_to_remove <- c("deviceid", "audit", "audit_URL", 
-                    "latitude", "longitude", "geopoint",
-                    "instance_name", "_geopoint_latitude", "_geopoint_longitude",
-                    "_geopoint_altitude", "_geopoint_precision",
-                    "point_number")
-cols_to_remove_exclude_loc <- c("deviceid", "audit", "audit_URL", 
-                    "latitude", "longitude",
-                    "instance_name", "point_number")
+                    "latitude", "longitude", "instance_name", 
+                    "point_number", "init_resp_age", "next_resp_age", "init_resp_gender", "next_resp_gender")
+
+cols_to_remove_loc <- c("geopoint", "_geopoint_latitude", "_geopoint_longitude",
+                        "_geopoint_altitude", "_geopoint_precision",)
+
+
 
 # Main dataset ------------------------------------------------------------
 
@@ -213,15 +213,21 @@ df_updating_sm_parents_roster <- cts_update_sm_parent_cols(input_df_cleaning_ste
 
 # export datasets ---------------------------------------------------------
 
-df_out_raw_data <- df_tool_data %>% select(-any_of(cols_to_remove))
+df_out_raw_data <- df_tool_data %>% select(-any_of(c(cols_to_remove, cols_to_remove_loc)))
 
-df_out_clean_data <- df_updating_sm_parents$updated_sm_parents %>% 
+df_updated_main_data <- df_updating_sm_parents$updated_sm_parents %>% 
+  mutate(i.respondent_age = ifelse(is.na(next_resp_age), init_resp_age, next_resp_age),
+         i.respondent_gender = ifelse(is.na(next_resp_gender), init_resp_gender, next_resp_gender))
+
+df_out_clean_data <- df_updated_main_data %>% 
+  select(-any_of(c(cols_to_remove, cols_to_remove_loc))) %>% 
+  filter(!`_uuid` %in% df_remove_survey_cl$uuid)
+
+df_out_clean_data_with_loc <-  df_updated_main_data %>% 
   select(-any_of(cols_to_remove)) %>% 
   filter(!`_uuid` %in% df_remove_survey_cl$uuid)
 
-df_out_clean_data_with_loc <-  df_updating_sm_parents$updated_sm_parents %>% 
-  select(-any_of(cols_to_remove_exclude_loc)) %>% 
-  filter(!`_uuid` %in% df_remove_survey_cl$uuid)
+
 
 df_out_clean_roster <- df_updating_sm_parents_roster$updated_sm_parents %>% 
   filter(!`_submission__uuid` %in% df_remove_survey_cl$uuid) %>% 
