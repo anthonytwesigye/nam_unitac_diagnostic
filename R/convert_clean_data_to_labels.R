@@ -187,6 +187,8 @@ for (sm_col in sm_extract_roster) {
 }
 
 df_roster_clean_data_with_so_sm_labels <- df_data_for_update_roster
+
+
 # format the headers ------------------------------------------------------
 
 # general columns
@@ -225,6 +227,18 @@ df_extracted_header_data <- tibble("old_cols" = df_to_extract_header) %>%
   pivot_wider(names_from = new_cols, values_from = labels)
 
 # extract header data roster
+
+df_to_extract_header_roster = df_roster_clean_data_with_so_sm_labels %>%
+  colnames()
+
+df_extracted_header_data_roster <- tibble("old_cols" = df_to_extract_header_roster) %>%
+  mutate(new_cols = paste0("x", row_number()),
+         labels = ifelse(old_cols %in% select_general_cols$qn_name, recode(old_cols, !!!setNames(select_general_cols$label, select_general_cols$qn_name)), old_cols),
+         labels = ifelse(old_cols %in% df_sm_choices_support_combined$qn_name, recode(old_cols, !!!setNames(df_sm_choices_support_combined$label, df_sm_choices_support_combined$qn_name)), labels),
+  ) %>%
+  select(-old_cols) %>%
+  pivot_wider(names_from = new_cols, values_from = labels)
+
 
 # create workbook ---------------------------------------------------------
 # workbook
