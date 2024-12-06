@@ -29,9 +29,7 @@ all_loa <- read_csv("inputs/r_loa_nam_diagnostic.csv")
 # data with composites ----------------------------------------------------
 
 # main data with composites
-df_data_with_composites <- df_main_clean_data %>% 
-  mutate(i.respondent_age = ifelse(is.na(next_resp_age), init_resp_age, next_resp_age),
-         i.respondent_gender = ifelse(is.na(next_resp_gender), init_resp_gender, next_resp_gender))
+df_data_with_composites <- df_main_clean_data
 
 # roster
 df_clean_loop_r_roster_with_composites <- df_clean_loop_r_roster %>% 
