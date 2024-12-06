@@ -264,6 +264,22 @@ writeData(wb = wb_data_with_labs, sheet = "clean_main_data_labels",
           colNames = FALSE,
           withFilter = FALSE)
 
+# roster_data_labels
+addWorksheet(wb_data_with_labs, sheetName="roster_data_labels")
+setColWidths(wb = wb_data_with_labs, sheet = "roster_data_labels", cols = 1:ncol(df_roster_clean_data_with_so_sm_labels), widths = 24.89)
+
+# header
+writeData(wb = wb_data_with_labs, sheet = "roster_data_labels", df_extracted_header_data_roster %>% head(1), startCol = 1,
+          startRow = 1, headerStyle = hs1, colNames = FALSE)
+addStyle(wb = wb_data_with_labs, sheet = "roster_data_labels", hs1, rows = 1, cols = 1:ncol(df_roster_clean_data_with_so_sm_labels), gridExpand = TRUE)
+
+# data
+writeData(wb = wb_data_with_labs, sheet = "roster_data_labels",
+          x = df_roster_clean_data_with_so_sm_labels ,
+          startRow = 2, startCol = 1,
+          colNames = FALSE,
+          withFilter = FALSE)
+
 # openXL(wb_data_with_labs)
 saveWorkbook(wb_data_with_labs, paste0("outputs/", butteR::date_file_prefix(),"_diagnostic_of_informality_data_with_labels.xlsx"), overwrite = TRUE)
 openXL(file = paste0("outputs/", butteR::date_file_prefix(),"_diagnostic_of_informality_data_with_labels.xlsx"))
