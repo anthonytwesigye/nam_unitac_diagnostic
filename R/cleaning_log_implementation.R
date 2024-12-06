@@ -214,17 +214,25 @@ df_updating_sm_parents_roster <- cts_update_sm_parent_cols(input_df_cleaning_ste
 # export datasets ---------------------------------------------------------
 
 df_out_raw_data <- df_tool_data %>% select(-any_of(cols_to_remove))
-df_out_clean_data <- df_updating_sm_parents$updated_sm_parents%>% 
+
+df_out_clean_data <- df_updating_sm_parents$updated_sm_parents %>% 
   select(-any_of(cols_to_remove)) %>% 
   filter(!`_uuid` %in% df_remove_survey_cl$uuid)
 
-df_out_clean_data_with_loc <-  df_updating_sm_parents$updated_sm_parents%>% 
+df_out_clean_data_with_loc <-  df_updating_sm_parents$updated_sm_parents %>% 
   select(-any_of(cols_to_remove_exclude_loc)) %>% 
   filter(!`_uuid` %in% df_remove_survey_cl$uuid)
 
 df_out_clean_roster <- df_updating_sm_parents_roster$updated_sm_parents %>% 
   filter(!`_submission__uuid` %in% df_remove_survey_cl$uuid) %>% 
-  select(-any_of(c("cleaning_uuid", "point_number")))
+  select(-any_of(c("cleaning_uuid", "point_number"))) %>% 
+  mutate(i.type_of_work_done = case_when(type_of_work_done %in% c("1", "4", "5") ~ "1",
+                                         type_of_work_done %in% c("28") ~ "2",
+                                         type_of_work_done %in% c("7", "8", "11", "12", "13", "20") ~ "3",
+                                         type_of_work_done %in% c("2", "3", "6", "9", "10", "15", "16", "17", "18", "21", "24", "25", "27") ~ "4",
+                                         type_of_work_done %in% c("19", "23") ~ "5",
+                                         type_of_work_done %in% c("14", "22", "98") ~ "98",
+                                         ))
 
 
 # list_of_datasets <- list("raw_data" = df_out_raw_data,
@@ -265,7 +273,13 @@ df_added_categories <- tibble::tribble(
   "type_of_work_done",                                                     "DP1.7 Type of main work done",                        "25 - Tailoring",
   "type_of_work_done",                                                     "DP1.7 Type of main work done",                          "26 - Butcher",
   "type_of_work_done",                                                     "DP1.7 Type of main work done",                   "27 - Security Guard",
-  "type_of_work_done",                                                     "DP1.7 Type of main work done",                          "28 - Fishing"
+  "type_of_work_done",                                                     "DP1.7 Type of main work done",                          "28 - Fishing",
+  "i.type_of_work_done",                                                     "DP1.7 Type of main work done",                          "1 - Food",
+  "i.type_of_work_done",                                                     "DP1.7 Type of main work done",                          "2 - Agric, forestry & fishing",
+  "i.type_of_work_done",                                                     "DP1.7 Type of main work done",                          "3 - Retail trade",
+  "i.type_of_work_done",                                                     "DP1.7 Type of main work done",                          "4 - Service-oriented",
+  "i.type_of_work_done",                                                     "DP1.7 Type of main work done",                          "5 - Transport",
+  "i.type_of_work_done",                                                     "DP1.7 Type of main work done",                          "98 - Other"
 )
 
 # datasets to export
