@@ -29,7 +29,8 @@ df_added_composite_qns <- tibble::tribble(
   "moving_around_using_equipment", "Moving around using equipment (e.g. wheelchair, etc.)",
   "lifting_and_carrying_objects",                          "Lifting and carrying objects",
   "calculating",                                           "Calculating",
-  "undertaking_a_task",                                    "Undertaking a task"
+  "undertaking_a_task",                                    "Undertaking a task",
+  "i.type_of_work_done",                                    "DP1.7 Type of main work done - Sectors"
 )
 
 df_tool_support <- df_survey %>% 
@@ -95,7 +96,13 @@ df_added_categories <- tibble::tribble(
   "undertaking_a_task",           "2 -  Mild difficulty (presents less than 25% of the time)",
   "undertaking_a_task", "3 -  Moderate difficulty (presents between 25% and 50% of the time)",
   "undertaking_a_task",   "4 -  Severe difficulty (presents between 50% and 95% of the time)",
-  "undertaking_a_task",       "5 -  Complete difficulty (presents more than 95% of the time)"
+  "undertaking_a_task",       "5 -  Complete difficulty (presents more than 95% of the time)",
+  "i.type_of_work_done",       "1 -  Food",
+  "i.type_of_work_done",       "2 -  Agric, forestry & fishing",
+  "i.type_of_work_done",       "3 -  Retail trade",
+  "i.type_of_work_done",       "4 -  Service-oriented",
+  "i.type_of_work_done",       "5 -  Transport",
+  "i.type_of_work_done",       "98 -  Other"
 )
 
 df_added_cats_extract <- df_added_categories %>% 
