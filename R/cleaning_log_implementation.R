@@ -52,7 +52,7 @@ cols_to_remove <- c("deviceid", "audit", "audit_URL",
                     "init_resp_labour_capacity", "valid_provider_of_the_job")
 
 cols_to_remove_loc <- c("geopoint", "_geopoint_latitude", "_geopoint_longitude",
-                        "_geopoint_altitude", "_geopoint_precision",)
+                        "_geopoint_altitude", "_geopoint_precision")
 
 
 
