@@ -133,6 +133,60 @@ for (sm_col in sm_extract) {
 
 df_main_clean_data_with_so_sm_labels <- df_data_for_update
 
+
+# Roster data ---------------------------------------------------------------
+
+# handle select one
+
+valid_data_cols_roster <- df_clean_loop_r_roster %>% 
+  janitor::remove_empty(which = "cols") %>% 
+  colnames()
+# select one cols
+select_one_cols_roster <- df_tool_select_type %>%
+  filter(select_type %in% c("select_one"), qn_name %in% valid_data_cols_roster)
+
+df_roster_clean_data_with_so_labels <- df_clean_loop_r_roster %>%
+  mutate(across(.cols = any_of(select_one_cols_roster$qn_name), .fns = ~ ifelse(!(is.na(.x)| .x %in% c("NA", "")), paste0(cur_column(), "_", .),.x))) %>%
+  mutate(across(.cols = any_of(select_one_cols_roster$qn_name), .fns = ~recode(.x, !!!setNames(df_choices_support$choice_label, df_choices_support$survey_choice_id))))
+
+
+# select multiple data update
+
+select_multiple_cols_roster <- df_tool_select_type %>%
+  filter(select_type %in% c("select_multiple"), qn_name %in% valid_data_cols_roster)
+
+# loop through the SM questions and data to update the SM cols
+# for a given sm question,
+# - create a named vector,
+# - mutate and replace using the named vector
+# - put escape characters while creating the named vector [\\b]
+
+sm_extract_roster <- select_multiple_cols_roster %>% 
+  pull(qn_name)
+
+df_data_for_update_roster <- df_roster_clean_data_with_so_labels
+
+for (sm_col in sm_extract_roster) {
+  current_list_name_roster <- select_multiple_cols_roster %>% 
+    filter(qn_name %in% sm_col) %>% 
+    pull(list_name)
+  current_choices_roster <- df_choices_support %>% 
+    filter(list_name %in% current_list_name_roster) %>% 
+    mutate(choice_name = paste0("\\b", choice_name,"\\b")) %>% 
+    select(choice_name, choice_label)
+  current_choices_vec_roster <- current_choices_roster %>% 
+    pull(choice_label) %>% 
+    set_names(current_choices_roster$choice_name)
+  # print(current_choices_vec_roster)
+  
+  df_current_update_roster <- df_data_for_update_roster %>%
+    mutate(!!sm_col := str_replace_all(string = !!sym(sm_col),  current_choices_vec_roster))
+  
+  df_data_for_update_roster <- df_current_update_roster
+  
+}
+
+df_roster_clean_data_with_so_sm_labels <- df_data_for_update_roster
 # format the headers ------------------------------------------------------
 
 # general columns
