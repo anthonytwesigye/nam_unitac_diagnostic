@@ -62,7 +62,13 @@ df_added_categories <- tibble::tribble(
   "type_of_work_done",    "25 - Tailoring",
   "type_of_work_done",    "26 - Butcher",
   "type_of_work_done",    "27 - Security Guard",
-  "type_of_work_done",    "28 - Fishing"
+  "type_of_work_done",    "28 - Fishing",
+  "i.type_of_work_done",       "1 -  Food",
+  "i.type_of_work_done",       "2 -  Agric, forestry & fishing",
+  "i.type_of_work_done",       "3 -  Retail trade",
+  "i.type_of_work_done",       "4 -  Service-oriented",
+  "i.type_of_work_done",       "5 -  Transport",
+  "i.type_of_work_done",       "98 -  Other"
 )
 
 df_choices_added <- df_added_categories %>% 
