@@ -48,7 +48,8 @@ pii_from_data$potential_PII
 # then determine wich columns to remove from both the raw and clean data
 cols_to_remove <- c("deviceid", "audit", "audit_URL", 
                     "latitude", "longitude", "instance_name", 
-                    "point_number", "init_resp_age", "next_resp_age", "init_resp_gender", "next_resp_gender")
+                    "point_number", "init_resp_age", "next_resp_age", "init_resp_gender", "next_resp_gender",
+                    "init_resp_labour_capacity", "valid_provider_of_the_job")
 
 cols_to_remove_loc <- c("geopoint", "_geopoint_latitude", "_geopoint_longitude",
                         "_geopoint_altitude", "_geopoint_precision",)
