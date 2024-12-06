@@ -79,7 +79,9 @@ df_choices_support <- df_choices %>%
   select(select_type, list_name, survey_choice_id, choice_name, choice_label, qn_name, label)
 
 
-# handle select one -------------------------------------------------------
+# Main data ---------------------------------------------------------------
+
+# handle select one
 
 valid_data_cols <- df_main_clean_data %>% 
   janitor::remove_empty(which = "cols") %>% 
@@ -93,8 +95,7 @@ df_main_clean_data_with_so_labels <- df_main_clean_data %>%
   mutate(across(.cols = any_of(select_one_cols$qn_name), .fns = ~recode(.x, !!!setNames(df_choices_support$choice_label, df_choices_support$survey_choice_id))))
 
 
-
-# select multiple data update ---------------------------------------------
+# select multiple data update
 
 select_multiple_cols <- df_tool_select_type %>%
   filter(select_type %in% c("select_multiple"), qn_name %in% valid_data_cols)
@@ -156,7 +157,7 @@ df_sm_choices_support_parent <- df_sm_choices_support %>%
 
 df_sm_choices_support_combined <- bind_rows(df_sm_choices_support_parent, df_sm_choices_support_individual)
 
-# extract header data
+# extract header data main
 
 df_to_extract_header = df_main_clean_data_with_so_sm_labels %>%
   colnames()
@@ -168,6 +169,8 @@ df_extracted_header_data <- tibble("old_cols" = df_to_extract_header) %>%
   ) %>%
   select(-old_cols) %>%
   pivot_wider(names_from = new_cols, values_from = labels)
+
+# extract header data roster
 
 # create workbook ---------------------------------------------------------
 # workbook
