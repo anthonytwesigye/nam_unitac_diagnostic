@@ -125,14 +125,19 @@ df_choices_support <- df_choices %>%
 # read analysis
 
 df_unformatted_analysis <- read_csv("outputs/non_formatted_analysis_nam_diagnostic.csv") %>% 
-    mutate(# group_var = str_replace_all(string = group_var, pattern = "%/%",replacement = "x"),
+  mutate(# group_var = str_replace_all(string = group_var, pattern = "%/%",replacement = "x"),
     # group_var_value = str_replace_all(string = group_var_value, pattern = "%/%",replacement = "x"),
     # int.analysis_var = ifelse(str_detect(string = analysis_var, pattern = "^i\\."), str_replace(string = analysis_var, pattern = "^i\\.", replacement = ""), analysis_var),
     int.analysis_var = analysis_var,
     analysis_choice_id = paste0(int.analysis_var, "_", analysis_var_value),
     analysis_var_value_label = ifelse(analysis_choice_id %in% df_choices_support$survey_choice_id, recode(analysis_choice_id, !!!setNames(df_choices_support$choice_label, df_choices_support$survey_choice_id)), analysis_var_value),
     Indicator = ifelse(int.analysis_var %in% df_tool_support$qn_name, recode(int.analysis_var, !!!setNames(df_tool_support$label, df_tool_support$qn_name)), int.analysis_var),
-  )
+  ) %>% 
+  mutate(group_var_value = case_when(group_var %in% c("interview_site_category") & group_var_value %in% c("1") ~ "Constructed_marketplace",
+                                     group_var %in% c("interview_site_category") & group_var_value %in% c("2") ~ "Public_open_spaces",
+                                     group_var %in% c("interview_site_category") & group_var_value %in% c("3") ~ "Home_based",
+                                     group_var %in% c("interview_site_category") & group_var_value %in% c("98") ~ "Other",
+                                     TRUE ~ group_var_value))
 
 # create wide analysis
 df_analysis_wide <- df_unformatted_analysis %>% 
@@ -212,11 +217,11 @@ addWorksheet(wb, sheetName="Diagnostic")
 writeData(wb, sheet = "Diagnostic", df_extracted_header %>% head(1), startCol = 2, 
           startRow = 1, headerStyle = hs2, colNames = FALSE, 
           borders = "all", borderColour = "#000000", borderStyle = "thin")
-addStyle(wb, sheet = "Diagnostic", hs1, rows = 1, cols = 1:65, gridExpand = TRUE)
+addStyle(wb, sheet = "Diagnostic", hs1, rows = 1, cols = 1:73, gridExpand = TRUE)
 
 setColWidths(wb = wb, sheet = "Diagnostic", cols = 1, widths = 70)
 setColWidths(wb = wb, sheet = "Diagnostic", cols = 2, widths = 26)
-setColWidths(wb = wb, sheet = "Diagnostic", cols = 3:65, widths = 10)
+setColWidths(wb = wb, sheet = "Diagnostic", cols = 3:73, widths = 10)
 
 # split variables to be written in different tables with in a sheet
 sheet_variables_data <- split(df_analysis_wide_reodered, factor(df_analysis_wide_reodered$analysis_var, levels = unique(df_analysis_wide_reodered$analysis_var)))
@@ -248,8 +253,8 @@ for (i in 1:length(sheet_variables_data)) {
   # add header for variable
   writeData(wb, sheet = "Diagnostic", get_question_label, startCol = 1, startRow = previous_row_end + 1)
   writeData(wb, sheet = "Diagnostic", get_qn_type, startCol = 2, startRow = previous_row_end + 1)
-  writeData(wb, sheet = "Diagnostic", get_dataset_type, startCol = 65, startRow = previous_row_end + 1)
-  addStyle(wb, sheet = "Diagnostic", hs2, rows = previous_row_end + 1, cols = 1:65, gridExpand = TRUE)
+  writeData(wb, sheet = "Diagnostic", get_dataset_type, startCol = 73, startRow = previous_row_end + 1)
+  addStyle(wb, sheet = "Diagnostic", hs2, rows = previous_row_end + 1, cols = 1:73, gridExpand = TRUE)
   
   # current_data_length <- max(current_variable_data$row_id) - min(current_variable_data$row_id)
   current_data_length <- nrow(current_variable_data)
@@ -260,8 +265,8 @@ for (i in 1:length(sheet_variables_data)) {
             sheet = "Diagnostic", 
             x = current_variable_data %>% 
               select(-any_of(c("analysis_var", "int.analysis_var", "analysis_var_value",
-                        "analysis_choice_id", "Indicator",
-                        "row_id", "dataset"))
+                               "analysis_choice_id", "Indicator",
+                               "row_id", "dataset"))
               ) %>% 
               mutate(analysis_type = NA_character_) %>% 
               arrange(desc(stat_total)), 
