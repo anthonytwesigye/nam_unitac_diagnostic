@@ -33,7 +33,8 @@ df_data_with_composites <- df_main_clean_data
 
 # roster
 df_clean_loop_r_roster_with_composites <- df_clean_loop_r_roster %>% 
-  mutate(interview_loc_level = recode(`_submission__uuid`, !!!setNames(df_main_clean_data$interview_loc_level, df_main_clean_data$`_uuid`)))
+  mutate(interview_loc_level = recode(`_submission__uuid`, !!!setNames(df_main_clean_data$interview_loc_level, df_main_clean_data$`_uuid`)),
+         interview_site_category = recode(`_submission__uuid`, !!!setNames(df_main_clean_data$interview_site_category, df_main_clean_data$`_uuid`)))
 
 # analysis - main -------------------------------------------------
 
