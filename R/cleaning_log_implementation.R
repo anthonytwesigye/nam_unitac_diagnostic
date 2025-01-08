@@ -233,7 +233,7 @@ df_out_clean_data_with_loc <-  df_updated_main_data %>%
 df_out_clean_roster <- df_updating_sm_parents_roster$updated_sm_parents %>% 
   filter(!`_submission__uuid` %in% df_remove_survey_cl$uuid) %>% 
   select(-any_of(c("cleaning_uuid", "point_number"))) %>% 
-  mutate(i.type_of_work_done = case_when(type_of_work_done %in% c("1", "4", "5", "26", "30", "50") ~ "1",
+  mutate(i.type_of_work_done = case_when(type_of_work_done %in% c("1", "4", "5", "26", "30", "50") ~ "1", # food sector
                                          type_of_work_done %in% c("28", "40", "48") ~ "2",
                                          type_of_work_done %in% c("7", "8", "11", "12", "13", "20", "53") ~ "3",
                                          type_of_work_done %in% c("2", "3", "6", "9", "10", "15", "16", "17", "18", "21", "24", "25", "27",
