@@ -41,7 +41,8 @@ df_tool_select_type_added <- tibble::tribble(
   "select_one", "activity_limits_list", "moving_around_using_equipment", "Moving around using equipment (e.g. wheelchair, etc.)",
   "select_one", "activity_limits_list", "lifting_and_carrying_objects",   "Lifting and carrying objects",
   "select_one", "activity_limits_list", "calculating",                    "Calculating",
-  "select_one", "activity_limits_list", "undertaking_a_task",             "Undertaking a task"
+  "select_one", "activity_limits_list", "undertaking_a_task",             "Undertaking a task",
+  "select_one", "sector_list", "i.type_of_work_done",             "DP1.7 Type of main work done - Sectors"
 )
 df_tool_select_type <- bind_rows(df_tool_select_type_init, df_tool_select_type_added)
   
@@ -150,6 +151,7 @@ df_choices_added <- df_added_categories %>%
          choice_label = str_replace(string = new_category, pattern = "^[0-9]{1,2}\\s\\-\\s", ""),
          qn_name = parent_qn) %>% 
   left_join(df_tool_select_type) %>% 
+  mutate(list_name = ifelse(qn_name %in% c("i.type_of_work_done"), "sector_list", list_name)) %>% 
   select(list_name, choice_name, choice_label)
 
 df_choices_support <- df_choices %>%
