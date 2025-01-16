@@ -245,7 +245,10 @@ df_out_clean_roster <- df_updating_sm_parents_roster$updated_sm_parents %>%
                                          type_of_work_done %in% c("39", "42", "43", "54", "55") ~ "9",
                                          type_of_work_done %in% c("38", "51") ~ "10",
                                          type_of_work_done %in% c("14", "22", "98") ~ "98",
-                                         ))
+                                         ),
+         i.food_sector = case_when(type_of_work_done %in% c("1", "4", "5", "26", "50") ~ as.character(type_of_work_done), # food sector
+                                         type_of_work_done %in% c("30") ~ "98",
+         ))
 
 
 # list_of_datasets <- list("raw_data" = df_out_raw_data,
@@ -324,7 +327,14 @@ df_added_categories <- tibble::tribble(
   "i.type_of_work_done",                                                     "DP1.7 Type of main work done",                          "8 - Teaching",
   "i.type_of_work_done",                                                     "DP1.7 Type of main work done",                          "9 - Manufacturing",
   "i.type_of_work_done",                                                     "DP1.7 Type of main work done",                          "10 - Financial activities",
-  "i.type_of_work_done",                                                     "DP1.7 Type of main work done",                          "98 - Other"
+  "i.type_of_work_done",                                                     "DP1.7 Type of main work done",                          "98 - Other",
+  
+  "i.food_sector",                                                     "Food sector",                          "1 - Tuck shop",
+  "i.food_sector",                                                     "Food sector",                          "4 - Bakery",
+  "i.food_sector",                                                     "Food sector",                          "5 - Catering food",
+  "i.food_sector",                                                     "Food sector",                          "26 - Butcher",
+  "i.food_sector",                                                     "Food sector",                          "50 - Kapana seller",
+  "i.food_sector",                                                     "Food sector",                          "98 - Other"
 )
 
 # datasets to export
