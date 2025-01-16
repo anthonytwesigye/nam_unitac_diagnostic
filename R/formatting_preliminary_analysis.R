@@ -30,7 +30,8 @@ df_added_composite_qns <- tibble::tribble(
   "lifting_and_carrying_objects",                          "Lifting and carrying objects",
   "calculating",                                           "Calculating",
   "undertaking_a_task",                                    "Undertaking a task",
-  "i.type_of_work_done",                                    "DP1.7 Type of main work done - Sectors"
+  "i.type_of_work_done",                                    "DP1.7 Type of main work done - Sectors",
+  "i.food_sector",                                    "Food - Sector"
 )
 
 df_tool_support <- df_survey %>% 
@@ -134,7 +135,13 @@ df_added_categories <- tibble::tribble(
   "i.type_of_work_done",       "8 -  Teaching",
   "i.type_of_work_done",       "9 -  Manufacturing",
   "i.type_of_work_done",       "10 -  Financial activities",
-  "i.type_of_work_done",       "98 -  Other"
+  "i.type_of_work_done",       "98 -  Other",
+  "i.food_sector",       "1 - Tuck shop",
+  "i.food_sector",       "4 - Bakery",
+  "i.food_sector",       "5 - Catering food",
+  "i.food_sector",       "26 - Butcher",
+  "i.food_sector",       "50 - Kapana seller",
+  "i.food_sector",       "98 -  Other"
 )
 
 df_added_cats_extract <- df_added_categories %>% 
